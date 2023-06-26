@@ -1,6 +1,8 @@
 MIT License
 
-Copyright (c) 2023 Testbank
+Copyright © 2023 Testbank <hello@testbank.dev> (https://testbank.dev)
+
+_Most definitely not a real bank._
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
