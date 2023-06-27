@@ -1,0 +1,22 @@
+name: CICD
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: node:16
+    services:
+      mysql:
+        image: mysql:8
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: 14284980dda5bec82f9d5eae966b45f5
+          MYSQL_USER: developer
+          MYSQL_PASSWORD: f69bbd182b5828921b295d5e7aeb1378
+          MYSQL_DATABASE: testbank-dev
+        volumes:
+          - ./test/database:/docker-entrypoint-initdb.d
+    steps:
+      - run: npm ci
