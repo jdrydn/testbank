@@ -1,0 +1,37 @@
+#
+# @author: jdrydn <james@jdrydn.com> (https://jdrydn.com)
+# @license: MIT License
+# @link: https://github.com/testbankhq/testbank
+#
+version: '3'
+services:
+
+  ## MYSQL CONTAINER
+  mysql:
+    image: mysql:8
+    container_name: testbank-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 14284980dda5bec82f9d5eae966b45f5
+      MYSQL_USER: developer
+      MYSQL_PASSWORD: f69bbd182b5828921b295d5e7aeb1378
+      MYSQL_DATABASE: testbank-dev
+    volumes:
+      - ./test/database:/docker-entrypoint-initdb.d:ro
+    ports:
+      - '127.0.0.1:3306:3306'
+    networks:
+      - testbank-dev
+
+  # DYNAMODB CONTAINER
+  dynamodb:
+    image: amazon/dynamodb-local
+    container_name: testbank-dynamodb
+    restart: always
+    ports:
+      - '127.0.0.1:8000:8000'
+    networks:
+      - testbank-dev
+
+networks:
+  testbank-dev:
