@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS `Tenants` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   KEY `createdAt` (`createdAt`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci AUTO_INCREMENT=10;
