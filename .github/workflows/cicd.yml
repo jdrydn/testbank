@@ -16,7 +16,6 @@ jobs:
           MYSQL_USER: developer
           MYSQL_PASSWORD: f69bbd182b5828921b295d5e7aeb1378
           MYSQL_DATABASE: testbank-dev
-        volumes:
-          - ./test/database:/docker-entrypoint-initdb.d
     steps:
       - run: npm ci
+      - run: npm run seed
