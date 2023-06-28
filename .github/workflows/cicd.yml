@@ -5,7 +5,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: node:16
     services:
       mysql:
         image: mysql:8
@@ -17,5 +16,11 @@ jobs:
           MYSQL_PASSWORD: f69bbd182b5828921b295d5e7aeb1378
           MYSQL_DATABASE: testbank-dev
     steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: npm
+
       - run: npm ci
       - run: npm run seed
