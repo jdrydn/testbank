@@ -25,10 +25,15 @@ export function createTestbankApi(stack: cdk.Stack, role: cdk.aws_iam.Role) {
     entry: path.resolve(__dirname, './api.ts'),
     handler: 'handler',
     role: role as cdk.aws_iam.IRole,
-    // logRetention: cdk.aws_logs.RetentionDays.ONE_MONTH,
     timeout: cdk.Duration.seconds(30),
     bundling: lambdaBundling,
   });
+
+  // new cdk.aws_logs.LogRetention(stack, 'api-function-log-retention', {
+  //   logGroupName: apiFunction.logGroup.logGroupName,
+  //   retention: cdk.aws_logs.RetentionDays.ONE_MONTH,
+  //   role: role as cdk.aws_iam.IRole,
+  // });
 
   const apiGateway = new cdk.aws_apigatewayv2.CfnApi(stack, 'api-gateway', {
     name: stack.stackName,
