@@ -6,6 +6,7 @@
     "build:prod": "cdk synth --context stage=prod",
     "deploy": "cdk deploy --context stage=dev",
     "deploy:prod": "cdk deploy --context stage=prod",
+    "seed": "ts-node -r dotenv/config ./test/database/import.ts",
     "test": "nyc mocha"
   },
   "repository": "https://github.com/testbankhq/testbank",
@@ -22,6 +23,7 @@
     "bunyan": "^1.8.15",
     "koa": "^2.14.2",
     "lodash": "^4.17.21",
+    "mysql2": "^3.4.2",
     "serverless-http": "^3.2.0"
   },
   "devDependencies": {
@@ -31,6 +33,7 @@
     "aws-cdk": "^2.85.0",
     "aws-cdk-lib": "^2.85.0",
     "constructs": "^10.2.60",
+    "dotenv": "^16.3.1",
     "esbuild": "^0.18.9",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.9.1",
