@@ -3,7 +3,7 @@
  * @license: MIT License
  * @link: https://github.com/testbankhq/testbank
  */
-CREATE TABLE IF NOT EXISTS `Transactions` (
+CREATE TABLE IF NOT EXISTS `Transaction` (
   `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `fromTenantId` INT(11) UNSIGNED NOT NULL,
   `fromAccountId` INT(11) UNSIGNED NOT NULL,

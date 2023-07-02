@@ -3,7 +3,7 @@
  * @license: MIT License
  * @link: https://github.com/testbankhq/testbank
  */
-CREATE TABLE IF NOT EXISTS `TenantTokens` (
+CREATE TABLE IF NOT EXISTS `TenantToken` (
   `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `tenantId` INT(11) UNSIGNED NOT NULL,
   `token` CHAR(32) NOT NULL,
