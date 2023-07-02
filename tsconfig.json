@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "typeRoots" : ["./types", "./node_modules/@types"],
     "module": "CommonJS",
     "target": "ES2015",
     "moduleResolution": "Node",
@@ -22,6 +23,10 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "skipLibCheck": true,
+    "paths": {
+      "@/lib/*": [ "./lib/*" ],
+      "@/modules/*": [ "./modules/*" ],
+    },
   },
   // "include": ["*.ts", "*/*.ts", "**/*.ts"],
   "exclude": ["*/node_modules"],
