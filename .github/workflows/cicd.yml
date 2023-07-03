@@ -11,10 +11,12 @@ jobs:
         ports:
           - 3306:3306
         env:
-          MYSQL_ROOT_PASSWORD: 14284980dda5bec82f9d5eae966b45f5
+          MYSQL_ROOT_PASSWORD: 26fe515e7c053af7359044dde3772f9f
           MYSQL_USER: developer
-          MYSQL_PASSWORD: f69bbd182b5828921b295d5e7aeb1378
-          MYSQL_DATABASE: testbank-dev
+          MYSQL_PASSWORD: 7214e528c6614c1de0e2d80cde0a7f72
+          MYSQL_DATABASE: testbank-test
+    env:
+      MYSQL_URI: mysql://developer:7214e528c6614c1de0e2d80cde0a7f72@127.0.0.1:3306/testbank-test
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -24,3 +26,4 @@ jobs:
 
       - run: npm ci
       - run: npm run seed
+      - run: npm test
