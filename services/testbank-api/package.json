@@ -2,6 +2,7 @@
   "name": "@testbankhq/testbank-api",
   "version": "1.0.0",
   "scripts": {
+    "dev": "nodemon --exec 'ts-node --esm -r tsconfig-paths/register ../../node_modules/.bin/aws-lambda-rie-http' --watch './*' -e 'ts' api.handler | bunyan -o short",
     "test": "nyc mocha"
   },
   "repository": "https://github.com/testbankhq/testbank",

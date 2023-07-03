@@ -7,7 +7,8 @@
     "deploy": "cdk deploy --context stage=dev",
     "deploy:prod": "cdk deploy --context stage=prod",
     "seed": "ts-node -r dotenv/config ./test/database/import.ts",
-    "test": "nyc mocha"
+    "test": "nyc mocha",
+    "test:mocha": "mocha"
   },
   "repository": "https://github.com/testbankhq/testbank",
   "bugs": "https://github.com/testbankhq/testbank/issues",
@@ -27,18 +28,24 @@
     "mysql-bricks": "^1.1.2",
     "mysql2": "^3.4.2",
     "serverless-http": "^3.2.0",
-    "sql-bricks": "^3.0.0"
+    "sql-bricks": "^3.0.0",
+    "yup": "^1.2.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.119",
     "@types/koa": "^2.13.6",
     "@types/koa__router": "^12.0.0",
+    "@types/mocha": "^10.0.1",
     "@types/ms": "^0.7.31",
     "aws-cdk": "^2.85.0",
     "aws-cdk-lib": "^2.85.0",
+    "aws-lambda-rie-http": "^1.0.2",
     "constructs": "^10.2.60",
     "dotenv": "^16.3.1",
     "esbuild": "^0.18.9",
+    "mocha": "^10.2.0",
+    "nodemon": "^2.0.22",
+    "nyc": "^15.1.0",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
@@ -47,5 +54,36 @@
   "engines": {
     "node": ">=16",
     "npm": ">=8"
+  },
+  "mocha": {
+    "exit": true,
+    "recursive": true,
+    "require": [
+      "ts-node/register",
+      "tsconfig-paths/register"
+    ],
+    "reporter": "spec",
+    "ignore": [
+      "**/node_modules"
+    ],
+    "file": [
+      "./test/bootstrap.ts"
+    ],
+    "spec": [
+      "./{,!(node_modules)/**}/*.test.{,+(js|ts)}"
+    ]
+  },
+  "nyc": {
+    "exclude": [
+      "*.test.js",
+      "**/*.test.js",
+      "*.test.ts",
+      "**/*.test.ts",
+      "test/"
+    ],
+    "reporter": [
+      "lcov",
+      "text"
+    ]
   }
 }

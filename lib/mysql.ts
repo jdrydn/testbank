@@ -4,10 +4,10 @@ import mysql from 'mysql2/promise';
 import sqlbricks from 'sql-bricks';
 
 const client = mysql.createPool({
-  uri: process.env.MYSQL_URL ?? 'mysql://127.0.0.1:3306',
+  uri: process.env.MYSQL_URI ?? 'mysql://127.0.0.1:3306/test',
   connectionLimit: parseInt(process.env.MYSQL_CONNECTION_LIMIT ?? '', 10) || 1,
   connectTimeout: ms(process.env.MYSQL_CONNECTION_TIMEOUT ?? '2s'),
-  timezone: 'UTC',
+  timezone: '+00:00', // Etc/UTC
   typeCast(field, next) {
     if ((field.type === 'TINY' && field.length === 1) || field.type === 'BOOLEAN') {
       // If this is a MySQL pseudo-boolean, parse it thusly
@@ -18,7 +18,7 @@ const client = mysql.createPool({
   },
 });
 
-export const sql: typeof sqlbricks & { _autoQuoteChar: string } = sqlbricks._extension();
+export const sql: typeof sqlbricks & { _autoQuoteChar?: string } = sqlbricks;
 // @LINK https://github.com/tamarzil/mysql-bricks/blob/d981523863c428145fc5e4976e53fb0aca0a3a39/index.js#L9
 // unfortunately, for now, this can only be done by overriding sql-bricks module itself
 // see issue https://github.com/CSNW/sql-bricks/issues/104
@@ -76,8 +76,10 @@ export async function mysqlQuery<R = Record<string, any>, W = never>(
   } else {
     assert(query && typeof query.toParams === 'function',
       new TypeError(`Expected query to be a Statement | string | [string, any[]] but found: ${typeof query}`));
-    ({ text, values } = query.toParams());
+    ({ text, values } = query.toParams({ placeholder: '?' }));
   }
+
+  // console.log({ text, values });
 
   try {
     if (text.trim().toUpperCase().startsWith('SELECT') && foundRows === true) {
@@ -187,9 +189,9 @@ class MysqlWriteResult<T = never> {
 
   public affectedRows: number;
   public changedRows: number;
-  public insertId: T | undefined;
+  public insertId: T;
 
-  constructor(affectedRows: number, changedRows: number, insertId?: T) {
+  constructor(affectedRows: number, changedRows: number, insertId: T) {
     this.affectedRows = affectedRows;
     this.changedRows = changedRows;
     this.insertId = insertId;

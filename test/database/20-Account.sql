@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `Account` (
   `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deletedAt` TIMESTAMP NULL,
   PRIMARY KEY (`id`),
-  FOREIGN KEY `tenantId` (`tenantId`) REFERENCES `Tenants` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT,
+  FOREIGN KEY `tenantId` (`tenantId`) REFERENCES `Tenant` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT,
   UNIQUE KEY `tenantId-externalId` (`tenantId`, `externalId`),
   KEY `createdAt` (`createdAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

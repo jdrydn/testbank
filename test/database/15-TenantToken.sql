@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `TenantToken` (
   `expiresAt` TIMESTAMP NULL,
   `deletedAt` TIMESTAMP NULL,
   PRIMARY KEY (`id`),
-  FOREIGN KEY `tenantId` (`tenantId`) REFERENCES `Tenants` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT,
+  FOREIGN KEY `tenantId` (`tenantId`) REFERENCES `Tenant` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT,
   UNIQUE KEY `token` (`token`),
   KEY `createdAt` (`createdAt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
