@@ -4,19 +4,25 @@ import ms from 'ms';
 import serverless from 'serverless-http';
 import type { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 
-import type { AppContext, AppState } from './context';
+import { authenticate, requireAuth } from './middleware/auth';
+import { AppContext, AppState, AppContextProps } from './context';
 
 import * as routes from './routes';
 
 export const app = new Koa<AppState, AppContext>();
 export const router = new KoaRouter<AppState, AppContext>();
+Object.defineProperties(app.context, AppContextProps);
 
 router.get('/', ctx => {
   ctx.status = 200;
   ctx.body = { hello: 'world' };
 });
 
+router.use(requireAuth);
+
 router.get('/accounts', routes.listAccounts);
+
+app.use(authenticate);
 
 app.use(router.routes()).use(router.allowedMethods());
 
