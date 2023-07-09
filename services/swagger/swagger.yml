@@ -1,0 +1,155 @@
+openapi: '3.0.3'
+
+info:
+  title: Testbank API
+  version: '2023.7'
+
+  contact:
+    name: Testbank
+    url: https://github.com/testbankhq
+
+  license:
+    name: MIT
+    url: https://github.com/testbankhq/testbank/blob/main/LICENSE.md
+
+
+externalDocs:
+  url: https://docs.testbank.dev
+
+servers:
+  - description: Testbank API
+    url: https://api.testbank.dev
+
+components:
+
+  securitySchemes:
+    AuthToken:
+      type: http
+      scheme: bearer
+
+  parameters:
+    UserAgentHeader:
+      in: header
+      name: User-Agent
+      description: A relevant `User-Agent` for your request handler.
+      required: true
+      schema:
+        type: string
+        example: '@example/example@1.0.0 <support@example.com> (https://example.com)'
+    IfNoneMatchHeader:
+      in: header
+      name: If-None-Match
+      description: >
+        `Etag` header from a previous response to this endpoint.
+        If the calculated Etag hash of the current response body matches this value, then the API will return an empty
+        `304 Not Modified` instead of the typical `200 OK`.
+      schema:
+        $ref: '#/components/headers/Etag/schema'
+    IfModifiedSinceHeader:
+      in: header
+      name: If-Modified-Since
+      description: >
+        `Last-Modified` header from a previous response to this endpoint.
+        If the Last Modified date of the current response body matches this value, then the API will return an empty
+        `304 Not Modified` instead of the typical `200 OK`.
+      schema:
+        $ref: '#/components/headers/LastModified/schema'
+    PaginationQuery:
+      in: query
+      name: page
+      description: >
+        Paginate through results from this endpoint by providing an offset & limit. For more information on pagination,
+        [please see here](./loans-introduction#pagination).
+      style: deepObject
+      explode: true
+      schema:
+        type: object
+        properties:
+          offset:
+            type: integer
+            default: 0
+          limit:
+            type: integer
+            default: 100
+
+  headers:
+    Etag:
+      description: Calculated hash of the response body
+      schema:
+        type: string
+        description: Quoted MD5 string
+        format: md5
+        example: '"36c2723e9db88e9024393f96542924cf"'
+    LastModified:
+      description: When this resource was Last-Modified
+      schema:
+        type: string
+        format: date-time-gmt-string
+        example: Tue, 03 May 2022 10:00:00 GMT
+    XRateLimitLimit:
+      description: Total number of requests in this window.
+      schema:
+        type: integer
+        example: 10
+    XRateLimitRemaining:
+      description: Number of requests remaining in this window.
+      schema:
+        type: integer
+        example: 9
+    XRateLimitUsed:
+      description: Number of requests used in this window.
+      schema:
+        type: integer
+        example: 1
+    XRateLimitReset:
+      description: The absolute time at which the current window resets in [UTC epoch seconds](https://en.wikipedia.org/wiki/Unix_time).
+      schema:
+        type: integer
+        example: 1672531200
+
+security:
+  - AuthToken: []
+
+tags:
+  - name: Tenants
+  - name: Accounts
+
+paths:
+  /:
+    get:
+      summary: Check Authentication
+      operationId: ping
+      security: []
+      tags: [Tenants]
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  meta:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: '"Testbank API"'
+                        example:
+                          $ref: '#/info/title'
+                      version:
+                        type: string
+                        description: The current API version, in the format `{year}.{month}(.{patch})?`
+                        example:
+                          $ref: '#/info/version'
+                  links:
+                    type: object
+                    properties:
+                      self:
+                        type: string
+                        example: https://api.testbank.dev/
+                      github:
+                        type: string
+                        example: https://github.com/testbankhq
+        500:
+          $ref: responses.yml#/ErrDefault

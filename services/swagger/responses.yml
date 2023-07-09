@@ -1,0 +1,92 @@
+ErrDefault:
+  description: An error occurred
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          errors:
+            type: array
+            description: An array of errors
+            minLength: 1
+            items:
+              $ref: 'jsonapi.yml#/ResourceError'
+        required:
+          - errors
+        example:
+          errors:
+            - title: An error occurred
+              detail: An error occurred processing your request.
+              status: 500
+
+ErrNotAuthenticated:
+  description: The request is not authenticated
+  headers:
+    X-RateLimit-Limit:
+      $ref: '#/components/headers/XRateLimitLimit'
+    X-RateLimit-Remaining:
+      $ref: '#/components/headers/XRateLimitRemaining'
+    X-RateLimit-Used:
+      $ref: '#/components/headers/XRateLimitUsed'
+    X-RateLimit-Reset:
+      $ref: '#/components/headers/XRateLimitReset'
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          errors:
+            type: array
+            items:
+              $ref: 'jsonapi.yml#/ResourceError'
+        required:
+          - errors
+        example:
+          errors:
+            - title: Not authenticated
+              detail: You are not authenticated to perform this action.
+              code: NOT_AUTHENTICATED
+              status: 401
+
+ErrForbidden:
+  description: >
+    The request is authenticated but not authorised to perform this action - likely due to a invalid/incorrect
+    role/relationship to the resource, or due to read/writing properties in the resource that this request is not
+    allowed to read/write.
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          errors:
+            type: array
+            items:
+              $ref: 'jsonapi.yml#/ResourceError'
+        required:
+          - errors
+        example:
+          errors:
+            - title: Not authorized
+              detail: You are not authorized to perform this action.
+              code: NOT_AUTHORIZED
+              status: 403
+
+ErrNotFound:
+  description: Resource not found
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          errors:
+            type: array
+            items:
+              $ref: 'jsonapi.yml#/ResourceError'
+        required:
+          - errors
+        example:
+          errors:
+            - title: Resource not found
+              detail: Resource not found.
+              code: RESOURCE_NOT_FOUND
+              status: 404
