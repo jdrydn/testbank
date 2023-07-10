@@ -1,7 +1,7 @@
 import assert from 'assert';
 import * as cdk from 'aws-cdk-lib';
 
-import { createTestbankApi } from './services/testbank-api/cdk';
+import { createTestbankApi } from './services/rest-api/cdk';
 
 (async () => {
   const app = new cdk.App();

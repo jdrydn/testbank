@@ -1,5 +1,5 @@
 import bunyan, { LogLevel } from 'bunyan';
-import type Koa from 'koa';
+import type { ParameterizedContext as NearlyKoaContext } from 'koa';
 
 const { AWS_LAMBDA_FUNCTION_NAME, LOG_LEVEL, LOG_NAME, NODE_ENV } = process.env;
 
@@ -8,15 +8,14 @@ function notEmptyObject(obj: any): boolean {
 }
 
 const serializers = {
-  request(req: Record<string, any>) {
+  request(req: NearlyKoaContext['request'] & { params?: any, body?: any }) {
     if (req && typeof req.method === 'string' && typeof req.url === 'string') {
-      const { method, hostname, url, headers, ip: ipAddress, params, query, body } = req;
+      const { method, hostname, url, headers, params, query, body } = req;
       return {
         method,
         hostname,
         url,
         headers: notEmptyObject(headers) ? headers : undefined,
-        ipAddress,
         // cookies: notEmptyObject(cookies) ? cookies : undefined,
         params: notEmptyObject(params) ? params : undefined,
         query: notEmptyObject(query) ? query : undefined,
@@ -26,7 +25,7 @@ const serializers = {
       return req;
     }
   },
-  response(res: Record<string, any>) {
+  response(res: NearlyKoaContext<{}, {}, any>['response']) {
     if (res && typeof res.status === 'number') {
       const { status } = res;
       return {
@@ -38,11 +37,11 @@ const serializers = {
       return res;
     }
   },
-  ctx(ctx: Koa.ParameterizedContext & { req: { event?: any, context?: any } }) {
+  ctx(ctx: NearlyKoaContext & { req: { lambdaEvent?: any, lambdaContext?: any } }) {
     if (ctx && ctx.req && ctx.request && ctx.response) {
       return {
-        event: notEmptyObject(ctx.req.event) ? ctx.req.event : undefined,
-        context: notEmptyObject(ctx.req.context) ? ctx.req.context : undefined,
+        event: notEmptyObject(ctx.req.lambdaEvent) ? ctx.req.lambdaEvent : undefined,
+        context: notEmptyObject(ctx.req.lambdaContext) ? ctx.req.lambdaContext : undefined,
         request: serializers.request(ctx.request),
         response: serializers.response(ctx.response),
         state: ctx.state,

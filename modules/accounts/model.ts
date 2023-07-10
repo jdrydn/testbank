@@ -29,6 +29,12 @@ export async function findAccounts(tenantId: number): Promise<AccountItem[]> {
   return rows;
 }
 
+export async function findAccountsById(ids: number[]): Promise<AccountItem[]> {
+  const selectQuery = sql.select().from('Account').where(sql.in('id', ids));
+  const { rows } = await mysqlQuery<AccountItem>(selectQuery);
+  return rows;
+}
+
 export async function createAccount(tenantId: number, create: Account, session?: MysqlSession): Promise<number> {
   const insertQuery = sql.insert().into('Account').values([{ tenantId, ...create }]);
   const { insertId } = await mysqlQuery(insertQuery, session);

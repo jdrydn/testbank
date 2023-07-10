@@ -1,8 +1,9 @@
 {
-  "name": "@testbankhq/testbank-api",
+  "name": "@testbankhq/swagger",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "dev": "nodemon --exec 'ts-node --esm -r tsconfig-paths/register ../../node_modules/.bin/aws-lambda-rie-http' --watch './*' -e 'ts' api.handler | bunyan -o short",
+    "dev": "http-server",
     "test": "nyc mocha"
   },
   "repository": "https://github.com/testbankhq/testbank",
