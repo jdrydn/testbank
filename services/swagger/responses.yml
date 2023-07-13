@@ -10,7 +10,7 @@ ErrDefault:
             description: An array of errors
             minLength: 1
             items:
-              $ref: 'jsonapi.yml#/ResourceError'
+              $ref: jsonapi.yml#/ResourceError
         required:
           - errors
         example:
@@ -21,15 +21,6 @@ ErrDefault:
 
 ErrNotAuthenticated:
   description: The request is not authenticated
-  headers:
-    X-RateLimit-Limit:
-      $ref: '#/components/headers/XRateLimitLimit'
-    X-RateLimit-Remaining:
-      $ref: '#/components/headers/XRateLimitRemaining'
-    X-RateLimit-Used:
-      $ref: '#/components/headers/XRateLimitUsed'
-    X-RateLimit-Reset:
-      $ref: '#/components/headers/XRateLimitReset'
   content:
     application/json:
       schema:
@@ -38,7 +29,7 @@ ErrNotAuthenticated:
           errors:
             type: array
             items:
-              $ref: 'jsonapi.yml#/ResourceError'
+              $ref: jsonapi.yml#/ResourceError
         required:
           - errors
         example:
@@ -61,7 +52,7 @@ ErrForbidden:
           errors:
             type: array
             items:
-              $ref: 'jsonapi.yml#/ResourceError'
+              $ref: jsonapi.yml#/ResourceError
         required:
           - errors
         example:
@@ -81,7 +72,7 @@ ErrNotFound:
           errors:
             type: array
             items:
-              $ref: 'jsonapi.yml#/ResourceError'
+              $ref: jsonapi.yml#/ResourceError
         required:
           - errors
         example:

@@ -6,15 +6,11 @@ info:
 
   contact:
     name: Testbank
-    url: https://github.com/testbankhq
+    url: https://www.testbank.dev
 
   license:
     name: MIT
     url: https://github.com/testbankhq/testbank/blob/main/LICENSE.md
-
-
-externalDocs:
-  url: https://docs.testbank.dev
 
 servers:
   - description: Testbank API
@@ -26,6 +22,41 @@ components:
     AuthToken:
       type: http
       scheme: bearer
+
+  headers:
+    Etag:
+      description: Calculated hash of the response body
+      schema:
+        type: string
+        description: Quoted MD5 string
+        format: md5
+        example: '"36c2723e9db88e9024393f96542924cf"'
+    LastModified:
+      description: When this resource was Last-Modified
+      schema:
+        type: string
+        format: date-time-gmt-string
+        example: Tue, 03 May 2022 10:00:00 GMT
+    XRateLimitLimit:
+      description: Total number of requests in this window.
+      schema:
+        type: integer
+        example: 10
+    XRateLimitRemaining:
+      description: Number of requests remaining in this window.
+      schema:
+        type: integer
+        example: 9
+    XRateLimitUsed:
+      description: Number of requests used in this window.
+      schema:
+        type: integer
+        example: 1
+    XRateLimitReset:
+      description: The absolute time at which the current window resets in [UTC epoch seconds](https://en.wikipedia.org/wiki/Unix_time).
+      schema:
+        type: integer
+        example: 1672531200
 
   parameters:
     UserAgentHeader:
@@ -72,41 +103,6 @@ components:
             type: integer
             default: 100
 
-  headers:
-    Etag:
-      description: Calculated hash of the response body
-      schema:
-        type: string
-        description: Quoted MD5 string
-        format: md5
-        example: '"36c2723e9db88e9024393f96542924cf"'
-    LastModified:
-      description: When this resource was Last-Modified
-      schema:
-        type: string
-        format: date-time-gmt-string
-        example: Tue, 03 May 2022 10:00:00 GMT
-    XRateLimitLimit:
-      description: Total number of requests in this window.
-      schema:
-        type: integer
-        example: 10
-    XRateLimitRemaining:
-      description: Number of requests remaining in this window.
-      schema:
-        type: integer
-        example: 9
-    XRateLimitUsed:
-      description: Number of requests used in this window.
-      schema:
-        type: integer
-        example: 1
-    XRateLimitReset:
-      description: The absolute time at which the current window resets in [UTC epoch seconds](https://en.wikipedia.org/wiki/Unix_time).
-      schema:
-        type: integer
-        example: 1672531200
-
 security:
   - AuthToken: []
 
@@ -115,6 +111,7 @@ tags:
   - name: Accounts
 
 paths:
+
   /:
     get:
       summary: Check Authentication
@@ -151,5 +148,139 @@ paths:
                       github:
                         type: string
                         example: https://github.com/testbankhq
+        500:
+          $ref: responses.yml#/ErrDefault
+
+  /accounts:
+    get:
+      summary: List accounts
+      operationId: listAccounts
+      tags: [Accounts]
+      parameters:
+        - $ref: 'jsonapi.yml#/PaginationQuery'
+      responses:
+        200:
+          description: List of Accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: components.yml#/AccountSchema
+                  meta:
+                    $ref: 'jsonapi.yml#/PrimaryDataPaginationLinks'
+                required:
+                  - data
+                  - meta
+              example:
+                data:
+                  - $ref: components.yml#/AccountExample1
+                  - $ref: components.yml#/AccountExample2
+                meta:
+                  next: /accounts?page[page]=2
+                  prev: null
+                  first: /accounts?page[page]=1
+                  last: /accounts?page[page]=2
+
+        500:
+          $ref: responses.yml#/ErrDefault
+    post:
+      summary: Create account
+      operationId: createAccount
+      tags: [Accounts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: components.yml#/AccountSchema
+              required:
+                - data
+      responses:
+        200:
+          description: Created account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: components.yml#/AccountSchema
+              example:
+                data:
+                  $ref: components.yml#/AccountExample1
+
+        500:
+          $ref: responses.yml#/ErrDefault
+  /accounts/{accountId}:
+    parameters:
+      - $ref: components.yml#/AccountIdPath
+    get:
+      summary: Get account by ID
+      operationId: getAccount
+      tags: [Accounts]
+      responses:
+        200:
+          description: Found account.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: components.yml#/AccountSchema
+                required:
+                  - data
+              example:
+                data:
+                  $ref: components.yml#/AccountExample1
+
+        500:
+          $ref: responses.yml#/ErrDefault
+    patch:
+      summary: Update account
+      operationId: createAccount
+      tags: [Accounts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: components.yml#/AccountSchema
+              required:
+                - data
+      responses:
+        200:
+          description: Created account
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: components.yml#/AccountSchema
+              example:
+                data:
+                  $ref: components.yml#/AccountExample1
+
+        500:
+          $ref: responses.yml#/ErrDefault
+    delete:
+      summary: Delete account
+      operationId: deleteAccount
+      tags: [Accounts]
+      responses:
+        204:
+          description: Confirmation the account is deleted.
+
         500:
           $ref: responses.yml#/ErrDefault

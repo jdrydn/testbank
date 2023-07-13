@@ -1,3 +1,45 @@
+ResourceMeta:
+  type: object
+  description: >
+    A JSON:API-formatted object detailing meta information.
+  additionalProperties:
+    oneOf:
+      - type: string
+      - type: number
+      - type: boolean
+
+ResourceLinks:
+  type: object
+  description: >
+    A JSON:API-formatted object detailing further links. These links could be further API queries, or links to
+    relevant external sites/pages that are relevant to the resource.
+  additionalProperties:
+    oneOf:
+      - type: string
+        format: uri
+        example: https://testbank.dev/#link-to-somewhere
+      - type: object
+        properties:
+          href:
+            type: string
+            format: uri
+            example: https://testbank.dev/#link-to-somewhere
+          title:
+            type: string
+          type:
+            type: string
+          meta: # Odd, $ref struggles here
+            type: object
+            description: >
+              A JSON:API-formatted object detailing meta information.
+            additionalProperties:
+              oneOf:
+                - type: string
+                - type: number
+                - type: boolean
+        required:
+          - href
+
 ResourceError:
   type: object
   description: A JSON:API-formatted error object
@@ -35,38 +77,22 @@ ResourceError:
   required:
     - detail
 
-ResourceLinks:
-  type: object
-  description: >
-    A JSON:API-formatted object detailing further links. These links could be further API queries, or links to
-    relevant external sites/pages that are relevant to the resource.
-  additionalProperties:
-    oneOf:
-      - type: string
-        format: uri
-      - type: object
-        properties:
-          href:
-            type: string
-            format: uri
-          title:
-            type: string
-          type:
-            type: string
-          meta:
-            $ref: '#/ResourceMeta'
-        required:
-          - href
-
-ResourceMeta:
-  type: object
-  description: >
-    A JSON:API-formatted object detailing meta information.
-  additionalProperties:
-    oneOf:
-      - type: string
-      - type: number
-      - type: boolean
+PaginationQuery:
+  in: query
+  name: page
+  description: Paginate through results from this endpoint by providing a page & limit.
+  style: deepObject
+  explode: true
+  example: page[page]=1&page[limit]=100
+  schema:
+    type: object
+    properties:
+      page:
+        type: integer
+        default: 0
+      limit:
+        type: integer
+        default: 100
 
 PrimaryDataPaginationLinks:
   type: object
