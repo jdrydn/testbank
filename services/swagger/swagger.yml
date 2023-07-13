@@ -85,23 +85,6 @@ components:
         `304 Not Modified` instead of the typical `200 OK`.
       schema:
         $ref: '#/components/headers/LastModified/schema'
-    PaginationQuery:
-      in: query
-      name: page
-      description: >
-        Paginate through results from this endpoint by providing an offset & limit. For more information on pagination,
-        [please see here](./loans-introduction#pagination).
-      style: deepObject
-      explode: true
-      schema:
-        type: object
-        properties:
-          offset:
-            type: integer
-            default: 0
-          limit:
-            type: integer
-            default: 100
 
 security:
   - AuthToken: []
@@ -245,7 +228,7 @@ paths:
           $ref: responses.yml#/ErrDefault
     patch:
       summary: Update account
-      operationId: createAccount
+      operationId: updateAccount
       tags: [Accounts]
       requestBody:
         required: true
@@ -260,7 +243,7 @@ paths:
                 - data
       responses:
         200:
-          description: Created account
+          description: Updated account
           content:
             application/json:
               schema:
