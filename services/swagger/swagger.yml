@@ -85,6 +85,285 @@ components:
         `304 Not Modified` instead of the typical `200 OK`.
       schema:
         $ref: '#/components/headers/LastModified/schema'
+    JsonApiPaginationQuery:
+      in: query
+      name: page
+      description: Paginate through results from this endpoint by providing a page & limit.
+      style: deepObject
+      explode: true
+      example: page[page]=1&page[limit]=100
+      schema:
+        type: object
+        properties:
+          page:
+            type: integer
+            default: 0
+          limit:
+            type: integer
+            default: 100
+    AccountIdPath:
+      in: path
+      name: accountId
+      description: Account ID
+      required: true
+      schema:
+        type: string
+        example: a1b2c3d4e5
+
+  responses:
+    ErrDefault:
+      description: An error occurred
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                description: An array of errors
+                minLength: 1
+                items:
+                  $ref: '#/components/schemas/JsonApiResourceError'
+            required:
+              - errors
+            example:
+              errors:
+                - title: An error occurred
+                  detail: An error occurred processing your request.
+                  status: 500
+
+    ErrNotAuthenticated:
+      description: The request is not authenticated
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JsonApiResourceError'
+            required:
+              - errors
+            example:
+              errors:
+                - title: Not authenticated
+                  detail: You are not authenticated to perform this action.
+                  code: NOT_AUTHENTICATED
+                  status: 401
+
+    ErrForbidden:
+      description: >
+        The request is authenticated but not authorised to perform this action - likely due to a invalid/incorrect
+        role/relationship to the resource, or due to read/writing properties in the resource that this request is not
+        allowed to read/write.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JsonApiResourceError'
+            required:
+              - errors
+            example:
+              errors:
+                - title: Not authorized
+                  detail: You are not authorized to perform this action.
+                  code: NOT_AUTHORIZED
+                  status: 403
+
+    ErrNotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JsonApiResourceError'
+            required:
+              - errors
+            example:
+              errors:
+                - title: Resource not found
+                  detail: Resource not found.
+                  code: RESOURCE_NOT_FOUND
+                  status: 404
+
+
+  schemas:
+    JsonApiResourceMeta:
+      type: object
+      description: A JSON:API-formatted object detailing meta information.
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: number
+          - type: boolean
+    JsonApiResourceLinks:
+      type: object
+      description: >
+        A JSON:API-formatted object detailing further links. These links could be further API queries, or links to
+        relevant external sites/pages that are relevant to the resource.
+      additionalProperties:
+        oneOf:
+          - type: string
+            format: uri
+            example: https://testbank.dev/#link-to-somewhere
+          - type: object
+            properties:
+              href:
+                type: string
+                format: uri
+                example: https://testbank.dev/#link-to-somewhere
+              title:
+                type: string
+              type:
+                type: string
+              meta: # Odd, $ref struggles here
+                type: object
+                description: A JSON:API-formatted object detailing meta information.
+                additionalProperties:
+                  oneOf:
+                    - type: string
+                    - type: number
+                    - type: boolean
+            required:
+              - href
+    JsonApiResourceError:
+      type: object
+      description: A JSON:API-formatted error object
+      properties:
+        title:
+          type: string
+          description: A short, human-readable summary of the problem.
+        detail:
+          type: string
+          description: A human-readable explanation specific to this occurrence of the problem.
+        status:
+          type: string
+          format: http-status-code
+          description: The HTTP status code applicable to this problem, expressed as a string value.
+        code:
+          type: string
+          description: An application-specific error code.
+        links:
+          $ref: '#/components/schemas/JsonApiResourceLinks'
+        meta:
+          $ref: '#/components/schemas/JsonApiResourceMeta'
+        source:
+          type: object
+          description: An object containing references to the primary source of the error.
+          properties:
+            pointer:
+              type: string
+              description: A pointer/reference to the value in the request query/body that caused the error.
+            parameter:
+              type: string
+              description: A string indicating which request  query parameter caused the error.
+            header:
+              type: string
+              description: A string indicating which request header caused the error.
+      required:
+        - detail
+    JsonApiPrimaryDataPaginationLinks:
+      type: object
+      description: A JSON:API-formatted object detailing further links, including pagination.
+      properties:
+        prev:
+          type: string
+          format: uri
+          description: An absolute URL to the previous page of results, `null` if there is no previous page.
+        next:
+          type: string
+          format: uri
+          description: An absolute URL to the next page of results, `null` if there is no next page.
+        first:
+          type: string
+          format: uri
+          description: An absolute URL to the first page of results, `null` if there is only 1 page.
+        last:
+          type: string
+          format: uri
+          description: An absolute URL to the last page of results, `null` if there is only 1 page.
+      additionalProperties:
+        $ref: '#/components/schemas/JsonApiResourceLinks/additionalProperties'
+      required:
+        - prev
+        - next
+        - first
+        - last
+    Account:
+      type: object
+      title: AccountResource
+      properties:
+        type:
+          type: string
+          enum: [accounts]
+        id:
+          type: string
+          example: a1b2c3d4e5
+          readOnly: true
+        attributes:
+          type: object
+          properties:
+            name:
+              type: string
+              example: My Account
+            currencyCode:
+              type: string
+              format: money-currency
+              example: USD
+          required:
+            - name
+            - currencyCode
+        meta:
+          type: object
+          properties:
+            externalId:
+              type: string
+              example: cb8ff63f-cb92-4328-b3c7-b54e2b6dbc5f
+            balanceTotal:
+              type: string
+              example: '0.00'
+              readOnly: true
+          required:
+            - balanceTotal
+      required:
+        - type
+        - id
+        - attributes
+        - meta
+
+  examples:
+    AccountExample1:
+      summary: First account example
+      value:
+        type: accounts
+        id: a1b2c3d4e5
+        attributes:
+          name: First Account
+          currencyCode: USD
+        meta:
+          externalId: cb8ff63f-cb92-4328-b3c7-b54e2b6dbc5f
+          balanceTotal: '0.00'
+    AccountExample2:
+      summary: Second account example
+      value:
+        type: accounts
+        id: f6g7h8i9j0
+        attributes:
+          name: Second Account
+          currencyCode: USD
+        meta:
+          externalId: d0fa9c51-c131-490c-9235-4b93cdd4fc91
+          balanceTotal: '0.00'
+
 
 security:
   - AuthToken: []
@@ -132,7 +411,7 @@ paths:
                         type: string
                         example: https://github.com/testbankhq
         500:
-          $ref: responses.yml#/ErrDefault
+          $ref: '#/components/responses/ErrDefault'
 
   /accounts:
     get:
@@ -140,7 +419,7 @@ paths:
       operationId: listAccounts
       tags: [Accounts]
       parameters:
-        - $ref: 'jsonapi.yml#/PaginationQuery'
+        - $ref: '#/components/parameters/JsonApiPaginationQuery'
       responses:
         200:
           description: List of Accounts
@@ -152,16 +431,16 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: components.yml#/AccountSchema
+                      $ref: '#/components/schemas/Account'
                   meta:
-                    $ref: 'jsonapi.yml#/PrimaryDataPaginationLinks'
+                    $ref: '#/components/schemas/JsonApiPrimaryDataPaginationLinks'
                 required:
                   - data
                   - meta
               example:
                 data:
-                  - $ref: components.yml#/AccountExample1
-                  - $ref: components.yml#/AccountExample2
+                  - $ref: '#/components/examples/AccountExample1/value'
+                  - $ref: '#/components/examples/AccountExample2/value'
                 meta:
                   next: /accounts?page[page]=2
                   prev: null
@@ -169,7 +448,7 @@ paths:
                   last: /accounts?page[page]=2
 
         500:
-          $ref: responses.yml#/ErrDefault
+          $ref: '#/components/responses/ErrDefault'
     post:
       summary: Create account
       operationId: createAccount
@@ -182,7 +461,7 @@ paths:
               type: object
               properties:
                 data:
-                  $ref: components.yml#/AccountSchema
+                  $ref: '#/components/schemas/Account'
               required:
                 - data
       responses:
@@ -194,16 +473,16 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: components.yml#/AccountSchema
+                    $ref: '#/components/schemas/Account'
               example:
                 data:
-                  $ref: components.yml#/AccountExample1
+                  $ref: '#/components/examples/AccountExample1/value'
 
         500:
-          $ref: responses.yml#/ErrDefault
+          $ref: '#/components/responses/ErrDefault'
   /accounts/{accountId}:
     parameters:
-      - $ref: components.yml#/AccountIdPath
+      - $ref: '#/components/parameters/AccountIdPath'
     get:
       summary: Get account by ID
       operationId: getAccount
@@ -217,15 +496,15 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: components.yml#/AccountSchema
+                    $ref: '#/components/schemas/Account'
                 required:
                   - data
               example:
                 data:
-                  $ref: components.yml#/AccountExample1
+                  $ref: '#/components/examples/AccountExample1/value'
 
         500:
-          $ref: responses.yml#/ErrDefault
+          $ref: '#/components/responses/ErrDefault'
     patch:
       summary: Update account
       operationId: updateAccount
@@ -238,7 +517,7 @@ paths:
               type: object
               properties:
                 data:
-                  $ref: components.yml#/AccountSchema
+                  $ref: '#/components/schemas/Account'
               required:
                 - data
       responses:
@@ -250,13 +529,13 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: components.yml#/AccountSchema
+                    $ref: '#/components/schemas/Account'
               example:
                 data:
-                  $ref: components.yml#/AccountExample1
+                  $ref: '#/components/examples/AccountExample1/value'
 
         500:
-          $ref: responses.yml#/ErrDefault
+          $ref: '#/components/responses/ErrDefault'
     delete:
       summary: Delete account
       operationId: deleteAccount
@@ -266,4 +545,4 @@ paths:
           description: Confirmation the account is deleted.
 
         500:
-          $ref: responses.yml#/ErrDefault
+          $ref: '#/components/responses/ErrDefault'
