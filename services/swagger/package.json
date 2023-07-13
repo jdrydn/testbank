@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "build:validate": "rdme openapi:validate ./swagger.yml",
     "dev": "http-server",
     "test": "nyc mocha"
   },
