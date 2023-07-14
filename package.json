@@ -6,6 +6,7 @@
     "build:prod": "cdk synth --context stage=prod",
     "deploy": "cdk deploy --context stage=dev",
     "deploy:prod": "cdk deploy --context stage=prod",
+    "lint:swagger": "rdme openapi:validate ./swagger.yml",
     "seed": "ts-node -r dotenv/config ./test/database/import.ts",
     "test": "nyc mocha",
     "test:mocha": "mocha"

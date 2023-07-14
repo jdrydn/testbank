@@ -85,22 +85,20 @@ components:
         `304 Not Modified` instead of the typical `200 OK`.
       schema:
         $ref: '#/components/headers/LastModified/schema'
-    JsonApiPaginationQuery:
+    JsonApiPageCountQuery:
       in: query
-      name: page
-      description: Paginate through results from this endpoint by providing a page & limit.
-      style: deepObject
-      explode: true
-      example: page[page]=1&page[limit]=100
+      name: page[page]
+      example: page[page]=1
       schema:
-        type: object
-        properties:
-          page:
-            type: integer
-            default: 0
-          limit:
-            type: integer
-            default: 100
+        type: integer
+        default: 1
+    JsonApiPageLimitQuery:
+      in: query
+      name: page[limit]
+      example: page[limit]=100
+      schema:
+        type: integer
+        default: 100
     AccountIdPath:
       in: path
       name: accountId
@@ -109,6 +107,14 @@ components:
       schema:
         type: string
         example: a1b2c3d4e5
+    TransactionIdPath:
+      in: path
+      name: transactionId
+      description: Transaction ID
+      required: true
+      schema:
+        type: string
+        example: c3d4e5f6h7
 
   responses:
     ErrDefault:
@@ -195,8 +201,8 @@ components:
                   code: RESOURCE_NOT_FOUND
                   status: 404
 
-
   schemas:
+
     JsonApiResourceMeta:
       type: object
       description: A JSON:API-formatted object detailing meta information.
@@ -205,6 +211,7 @@ components:
           - type: string
           - type: number
           - type: boolean
+
     JsonApiResourceLinks:
       type: object
       description: >
@@ -235,6 +242,7 @@ components:
                     - type: boolean
             required:
               - href
+
     JsonApiResourceError:
       type: object
       description: A JSON:API-formatted error object
@@ -271,6 +279,7 @@ components:
               description: A string indicating which request header caused the error.
       required:
         - detail
+
     JsonApiPrimaryDataPaginationLinks:
       type: object
       description: A JSON:API-formatted object detailing further links, including pagination.
@@ -298,6 +307,7 @@ components:
         - next
         - first
         - last
+
     Account:
       type: object
       title: AccountResource
@@ -319,6 +329,11 @@ components:
               type: string
               format: money-currency
               example: USD
+            visibility:
+              type: string
+              enum: [PUBLIC, UNLISTED, PRIVATE]
+              default: UNLISTED
+              example: PUBLIC
           required:
             - name
             - currencyCode
@@ -332,38 +347,105 @@ components:
               type: string
               example: '0.00'
               readOnly: true
+            createdAt:
+              type: string
+              format: date-time
+              example: '2023-07-12T19:00:00.000Z'
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              example: '2023-07-12T19:00:00.000Z'
+              readOnly: true
           required:
             - balanceTotal
+            - createdAt
+            - updatedAt
       required:
         - type
         - id
         - attributes
         - meta
 
-  examples:
-    AccountExample1:
-      summary: First account example
-      value:
-        type: accounts
-        id: a1b2c3d4e5
+    Transaction:
+      type: object
+      title: TransactionResource
+      properties:
+        type:
+          type: string
+          enum: [transactions]
+        id:
+          type: string
+          example: c3d4e5f6g7
+          readOnly: true
         attributes:
-          name: First Account
-          currencyCode: USD
+          type: object
+          properties:
+            amount:
+              type: string
+              format: money-value
+              example: '100.00'
+            reference:
+              type: string
+          required:
+            - amount
+            - reference
+        relationships:
+          type: object
+          properties:
+            sender:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    type:
+                      $ref: '#/components/schemas/Account/properties/type'
+                    id:
+                      type: string
+                      example: a1b2c3d4e5
+                  required:
+                    - type
+                    - id
+              required:
+                - data
+            recipient:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    type:
+                      $ref: '#/components/schemas/Account/properties/type'
+                    id:
+                      type: string
+                      example: a1b2c3d4e5
+                  required:
+                    - type
+                    - id
+              required:
+                - data
+          required:
+            - amount
+            - reference
         meta:
-          externalId: cb8ff63f-cb92-4328-b3c7-b54e2b6dbc5f
-          balanceTotal: '0.00'
-    AccountExample2:
-      summary: Second account example
-      value:
-        type: accounts
-        id: f6g7h8i9j0
-        attributes:
-          name: Second Account
-          currencyCode: USD
-        meta:
-          externalId: d0fa9c51-c131-490c-9235-4b93cdd4fc91
-          balanceTotal: '0.00'
-
+          type: object
+          properties:
+            exchangeRate:
+              type: number
+              readOnly: true
+              example: 1
+            createdAt:
+              type: string
+              format: date-time
+              readOnly: true
+              example: '2023-07-12T19:00:00.000Z'
+          required:
+            - createdAt
+      required:
+        - type
+        - id
+        - attributes
 
 security:
   - AuthToken: []
@@ -371,6 +453,8 @@ security:
 tags:
   - name: Tenants
   - name: Accounts
+  - name: Transactions
+  - name: Static
 
 paths:
 
@@ -419,7 +503,8 @@ paths:
       operationId: listAccounts
       tags: [Accounts]
       parameters:
-        - $ref: '#/components/parameters/JsonApiPaginationQuery'
+        - $ref: '#/components/parameters/JsonApiPageCountQuery'
+        - $ref: '#/components/parameters/JsonApiPageLimitQuery'
       responses:
         200:
           description: List of Accounts
@@ -437,21 +522,15 @@ paths:
                 required:
                   - data
                   - meta
-              example:
-                data:
-                  - $ref: '#/components/examples/AccountExample1/value'
-                  - $ref: '#/components/examples/AccountExample2/value'
-                meta:
-                  next: /accounts?page[page]=2
-                  prev: null
-                  first: /accounts?page[page]=1
-                  last: /accounts?page[page]=2
-
         500:
           $ref: '#/components/responses/ErrDefault'
     post:
       summary: Create account
       operationId: createAccount
+      description: >
+        Create a new account, with a specific name & currency code. Optionally attach an external ID so you can track
+        this account in your integration. Optionally include an initial balance transaction to seed the account with
+        funds immediately.
       tags: [Accounts]
       requestBody:
         required: true
@@ -461,7 +540,35 @@ paths:
               type: object
               properties:
                 data:
-                  $ref: '#/components/schemas/Account'
+                  type: object
+                  properties:
+                    type:
+                      $ref: '#/components/schemas/Account/properties/type'
+                    attributes:
+                      $ref: '#/components/schemas/Account/properties/attributes'
+                    relationships:
+                      type: object
+                      properties:
+                        initialBalance:
+                          type: object
+                          properties:
+                            data:
+                              type: object
+                              properties:
+                                type:
+                                  $ref: '#/components/schemas/Transaction/properties/type'
+                                attributes:
+                                  $ref: '#/components/schemas/Transaction/properties/attributes'
+                              required:
+                                - type
+                                - attributes
+                          required:
+                            - data
+                    meta:
+                      $ref: '#/components/schemas/Account/properties/meta'
+                  required:
+                    - type
+                    - attributes
               required:
                 - data
       responses:
@@ -473,11 +580,41 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Account'
-              example:
-                data:
-                  $ref: '#/components/examples/AccountExample1/value'
-
+                    type: object
+                    properties:
+                      type:
+                        $ref: '#/components/schemas/Account/properties/type'
+                      id:
+                        $ref: '#/components/schemas/Account/properties/id'
+                      attributes:
+                        $ref: '#/components/schemas/Account/properties/attributes'
+                      relationships:
+                        type: object
+                        properties:
+                          initialTransaction:
+                            type: object
+                            properties:
+                              data:
+                                type: object
+                                properties:
+                                  type:
+                                    $ref: '#/components/schemas/Transaction/properties/type'
+                                  id:
+                                    $ref: '#/components/schemas/Transaction/properties/id'
+                                required:
+                                  - type
+                                  - id
+                            required:
+                              - data
+                      meta:
+                        $ref: '#/components/schemas/Account/properties/meta'
+                    required:
+                      - type
+                      - id
+                      - attributes
+                      - meta
+                required:
+                  - data
         500:
           $ref: '#/components/responses/ErrDefault'
   /accounts/{accountId}:
@@ -499,10 +636,6 @@ paths:
                     $ref: '#/components/schemas/Account'
                 required:
                   - data
-              example:
-                data:
-                  $ref: '#/components/examples/AccountExample1/value'
-
         500:
           $ref: '#/components/responses/ErrDefault'
     patch:
@@ -530,10 +663,8 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Account'
-              example:
-                data:
-                  $ref: '#/components/examples/AccountExample1/value'
-
+                required:
+                  - data
         500:
           $ref: '#/components/responses/ErrDefault'
     delete:
@@ -543,6 +674,169 @@ paths:
       responses:
         204:
           description: Confirmation the account is deleted.
+        500:
+          $ref: '#/components/responses/ErrDefault'
 
+  /transactions:
+    get:
+      summary: List transactions
+      operationId: listTransactions
+      tags: [Transactions]
+      parameters:
+        - $ref: '#/components/parameters/JsonApiPageCountQuery'
+        - $ref: '#/components/parameters/JsonApiPageLimitQuery'
+      responses:
+        200:
+          description: List of Transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  meta:
+                    $ref: '#/components/schemas/JsonApiPrimaryDataPaginationLinks'
+                required:
+                  - data
+                  - meta
+        500:
+          $ref: '#/components/responses/ErrDefault'
+    post:
+      summary: Create transaction
+      operationId: createTransaction
+      tags: [Transactions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Transaction'
+              required:
+                - data
+      responses:
+        200:
+          description: Created transaction
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+                required:
+                  - data
+        500:
+          $ref: '#/components/responses/ErrDefault'
+  /transactions/{transactionId}:
+    parameters:
+      - $ref: '#/components/parameters/TransactionIdPath'
+    get:
+      summary: Get transaction by ID
+      operationId: getTransaction
+      tags: [Transactions]
+      responses:
+        200:
+          description: Found transaction
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+                required:
+                  - data
+        500:
+          $ref: '#/components/responses/ErrDefault'
+    patch:
+      summary: Update transaction
+      operationId: updateTransaction
+      tags: [Transactions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: '#/components/schemas/Transaction'
+              required:
+                - data
+      responses:
+        200:
+          description: Updated transaction
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+                required:
+                  - data
+        500:
+          $ref: '#/components/responses/ErrDefault'
+    delete:
+      summary: Delete transaction
+      operationId: deleteTransaction
+      tags: [Transactions]
+      responses:
+        204:
+          description: Confirmation the transaction is deleted.
+        500:
+          $ref: '#/components/responses/ErrDefault'
+
+  /currencies:
+    get:
+      summary: Get Currencies
+      operationId: getCurrencies
+      security: []
+      tags: [Static]
+      responses:
+        200:
+          description: List of currency codes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      title: Currency
+                      properties:
+                        code:
+                          type: string
+                          example: USD
+                        icon:
+                          type: string
+                          example: 🇺🇸
+                        name:
+                          type: string
+                          example: United States Dollar
+                        rate:
+                          type: number
+                          example: 1
+                      required:
+                        - code
+                        - name
+              example:
+                data:
+                  - code: USD
+                    name: United States Dollar
+                    icon: 🇺🇸
+                    rate: 1
+                  - code: GBP
+                    name: Great British Pound
+                    icon: 🇬🇧
+                    rate: 0.763487
         500:
           $ref: '#/components/responses/ErrDefault'
