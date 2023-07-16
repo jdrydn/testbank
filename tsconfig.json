@@ -26,6 +26,7 @@
     "paths": {
       "@/lib/*": [ "./lib/*" ],
       "@/modules/*": [ "./modules/*" ],
+      "@/test/*": [ "./test/*" ],
     },
   },
   // "include": ["*.ts", "*/*.ts", "**/*.ts"],

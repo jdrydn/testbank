@@ -117,6 +117,8 @@ export const serverlessHttpOpts: ServerlessHttpOptions = {
 
     const { any } = event.pathParameters || {};
     req.url = typeof any === 'string' ? `/${any || ''}` : req.url;
+
+    logger.debug({ req_id: context.awsRequestId, event, context });
   },
   response(res: any, _event: APIGatewayProxyEventV2, context: Context & { startedAt: number }) {
     res.headers['x-powered-by'] = context.functionName;

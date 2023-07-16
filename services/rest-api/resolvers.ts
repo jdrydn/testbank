@@ -8,5 +8,9 @@ export function createResolver(ctx: KoaContext) {
 
     [accountsType]: ids => getAccountsById(ctx.state.tenantId ?? 0, ids, true),
 
+  }, {
+    links: {
+      baseUrl: ctx.apiBaseurl,
+    },
   });
 }

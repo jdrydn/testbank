@@ -5,11 +5,8 @@ import type { Next as NextFunction } from 'koa';
 
 import type { KoaContext } from '../context';
 
-export async function configure(ctx: KoaContext, next: NextFunction) {
+export async function wrapErrorMiddleware(ctx: KoaContext, next: NextFunction) {
   try {
-    const { lambdaEvent: event, lambdaContext: context } = ctx.req;
-    ctx.log.debug({ event, context });
-
     // Continue through the rest of the router
     await next();
 

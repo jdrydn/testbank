@@ -1,9 +1,7 @@
 import type { JsonApiResource } from 'jsonapi-resolvers';
 
-import { CurrencyCode } from '@/modules/currencyCodes/static';
-
 import { encodeAccountId, decodeAccountId } from './controller';
-import { AccountItem, findAccountsById } from './model';
+import { AccountItem, AccountVisibility, findAccountsById } from './model';
 
 export const JSONAPI_TYPE = 'accounts';
 
@@ -20,22 +18,26 @@ export type PrivateAccountJsonApiResource = JsonApiResource & {
   id: string,
   attributes: {
     name: string,
-    currencyCode: CurrencyCode,
-    balanceTotal: number,
-    // cryptoFractional?: number,
+    email?: string | undefined,
+    phone?: string | undefined,
+    visibility: typeof AccountVisibility[keyof typeof AccountVisibility],
   },
-  meta: {
-    externalId?: string | undefined,
-    createdAt: string,
-    updatedAt: string,
+  relationships: {
+    // tenant: { data: { type: 'tenants', id: string } } | undefined,
+    currency: { data: { type: 'currencies', id: string } } | undefined,
+    // loan: { data: { type: 'loans', id: string } } | undefined,
   },
   links: {
     self: string,
+    transactions: string,
   },
-  // relationships: {
-  //   tenant: { data: { type: 'tenants', id: string } } | undefined,
-  //   // loan: { data: { type: 'loans', id: string } } | undefined,
-  // },
+  meta: {
+    externalId?: string | undefined,
+    balanceTotal: number,
+    // balanceFractional?: number,
+    createdAt: string,
+    updatedAt: string,
+  },
 };
 
 export async function getAccountsById(currentTenantId: number, accountIds: (string | number)[], allowPublic = false):
@@ -69,17 +71,23 @@ export function transformPrivateAccount(entry: AccountItem): PrivateAccountJsonA
     id,
     attributes: {
       name: entry.name,
-      currencyCode: entry.currencyCode,
-      balanceTotal: entry.balanceTotal,
+      email: entry.email,
+      phone: entry.phone,
+      visibility: AccountVisibility[entry.visibility],
     },
-    meta: {
-      externalId: entry.externalId,
-      createdAt: entry.createdAt.toISOString(),
-      updatedAt: entry.updatedAt.toISOString(),
+    relationships: {
+      // tenant: { data: { type: 'tenants', id: entry.tenantId } },
+      currency: { data: { type: 'currencies', id: entry.currencyCode } },
     },
     links: {
       self: `/accounts/${id}`,
-      transactions: `/accounts/${id}/transactions`,
+      transactions: `/transactions/?filter[account]=${id}`,
+    },
+    meta: {
+      externalId: entry.externalId,
+      balanceTotal: entry.balanceTotal,
+      createdAt: entry.createdAt.toISOString(),
+      updatedAt: entry.updatedAt.toISOString(),
     },
   };
 }

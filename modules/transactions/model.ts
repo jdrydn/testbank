@@ -1,5 +1,5 @@
 import { mysqlQuery, sql, MysqlSession } from '@/lib/mysql';
-import { CurrencyCode } from '@/modules/currencyCodes/static';
+import { CurrencyCode } from '@/modules/currencies/static';
 
 export interface Transaction {
   fromTenantId: number,

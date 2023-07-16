@@ -1,9 +1,11 @@
 {
   "name": "@testbankhq/rest-api",
-  "version": "1.0.0",
+  "version": "2023.7.1",
   "scripts": {
     "dev": "nodemon --exec 'ts-node --esm -r tsconfig-paths/register ../../node_modules/.bin/aws-lambda-rie-http' --watch './*' -e 'ts' api.handler | bunyan -o short",
-    "test": "nyc mocha"
+    "test": "nyc mocha",
+    "test:mocha": "mocha",
+    "test:debug": "LOG_LEVEL=debug mocha"
   },
   "repository": "https://github.com/testbankhq/testbank",
   "bugs": "https://github.com/testbankhq/testbank/issues",
@@ -15,5 +17,32 @@
   "engines": {
     "node": ">=16",
     "npm": ">=8"
+  },
+  "mocha": {
+    "exit": true,
+    "recursive": true,
+    "require": [
+      "ts-node/register",
+      "tsconfig-paths/register"
+    ],
+    "reporter": [
+      "spec"
+    ],
+    "file": [
+      "../../test/bootstrap.ts"
+    ],
+    "spec": [
+      "./{,!(node_modules)/**}/*.test.{,+(js|ts)}"
+    ]
+  },
+  "nyc": {
+    "exclude": [
+      "*.d.ts",
+      "test/"
+    ],
+    "reporter": [
+      "lcov",
+      "text"
+    ]
   }
 }

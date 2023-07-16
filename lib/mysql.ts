@@ -47,7 +47,9 @@ export async function getMysqlConnection<T = any>(
 }
 
 export async function mysqlQuery<T = Record<string, any>>(
-  query: sqlbricks.SelectStatement, conn?: MysqlSession, foundRows?: true,
+  query: sqlbricks.SelectStatement,
+  conn?: MysqlSession,
+  { foundRows }?: { foundRows?: true },
 ): Promise<MysqlReadResult<T>>;
 export async function mysqlQuery<T = number>(
   query: sqlbricks.InsertStatement, conn?: MysqlSession
@@ -64,7 +66,7 @@ export async function mysqlQuery<R = unknown, W = number>(
 export async function mysqlQuery<R = Record<string, any>, W = never>(
   query: sqlbricks.Statement | string | [string, any[]],
   conn?: MysqlSession | undefined,
-  foundRows?: true,
+  { foundRows }: { foundRows?: true } = {},
 ): Promise<MysqlReadResult<R> | MysqlWriteResult<W>> {
   let text: string = '';
   let values: any[] = [];

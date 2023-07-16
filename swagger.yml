@@ -10,7 +10,7 @@ info:
 
   license:
     name: MIT
-    url: https://github.com/testbankhq/testbank/blob/main/LICENSE.md
+    url: https://github.com/jdrydn/testbank/blob/main/LICENSE.md
 
 servers:
   - description: Testbank API
@@ -88,17 +88,20 @@ components:
     JsonApiPageCountQuery:
       in: query
       name: page[page]
-      example: page[page]=1
+      description: Set the page number of resources to return.
       schema:
         type: integer
         default: 1
+        minimum: 0
     JsonApiPageLimitQuery:
       in: query
       name: page[limit]
-      example: page[limit]=100
+      description: Set the maximum number of resources to return.
       schema:
         type: integer
-        default: 100
+        default: 20
+        minimum: 0
+        maximum: 100
     AccountIdPath:
       in: path
       name: accountId
@@ -159,10 +162,7 @@ components:
                   status: 401
 
     ErrForbidden:
-      description: >
-        The request is authenticated but not authorised to perform this action - likely due to a invalid/incorrect
-        role/relationship to the resource, or due to read/writing properties in the resource that this request is not
-        allowed to read/write.
+      description: The request is authenticated but not authorised to perform this action.
       content:
         application/json:
           schema:
@@ -288,25 +288,70 @@ components:
           type: string
           format: uri
           description: An absolute URL to the previous page of results, `null` if there is no previous page.
+          example: /resource?page[count]=2&page[limit]=100
         next:
           type: string
           format: uri
           description: An absolute URL to the next page of results, `null` if there is no next page.
+          example: /resource?page[count]=4&page[limit]=100
         first:
           type: string
           format: uri
           description: An absolute URL to the first page of results, `null` if there is only 1 page.
+          example: /resource?page[count]=1&page[limit]=100
         last:
           type: string
           format: uri
           description: An absolute URL to the last page of results, `null` if there is only 1 page.
-      additionalProperties:
-        $ref: '#/components/schemas/JsonApiResourceLinks/additionalProperties'
+          example: /resource?page[count]=10&page[limit]=100
       required:
         - prev
         - next
         - first
         - last
+
+    Currency:
+      type: object
+      title: CurrencyResource
+      properties:
+        type:
+          type: string
+          enum: [currencies]
+        id:
+          type: string
+          format: money-currency
+          example: USD
+          readOnly: true
+        attributes:
+          type: object
+          properties:
+            name:
+              type: string
+              example: United States Dollar
+            symbol:
+              type: string
+              format: money-symbol
+              example: $
+            emoji:
+              type: string
+              format: emoji
+              example: 🇺🇸
+          required:
+            - name
+            - symbol
+        meta:
+          type: object
+          properties:
+            exchangeRate:
+              type: number
+              example: 1
+          required:
+            - exchangeRate
+      required:
+        - type
+        - id
+        - attributes
+        - meta
 
     Account:
       type: object
@@ -315,6 +360,7 @@ components:
         type:
           type: string
           enum: [accounts]
+          default: accounts
         id:
           type: string
           example: a1b2c3d4e5
@@ -325,10 +371,6 @@ components:
             name:
               type: string
               example: My Account
-            currencyCode:
-              type: string
-              format: money-currency
-              example: USD
             visibility:
               type: string
               enum: [PUBLIC, UNLISTED, PRIVATE]
@@ -337,6 +379,28 @@ components:
           required:
             - name
             - currencyCode
+        relationships:
+          type: object
+          properties:
+            currency:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    type:
+                      $ref: '#/components/schemas/Currency/properties/type'
+                    id:
+                      type: string
+                      format: money-currency
+                      example: USD
+                  required:
+                    - type
+                    - id
+              required:
+                - data
+          required:
+            - currency
         meta:
           type: object
           properties:
@@ -345,7 +409,7 @@ components:
               example: cb8ff63f-cb92-4328-b3c7-b54e2b6dbc5f
             balanceTotal:
               type: string
-              example: '0.00'
+              example: '100.00'
               readOnly: true
             createdAt:
               type: string
@@ -374,6 +438,7 @@ components:
         type:
           type: string
           enum: [transactions]
+          default: transactions
         id:
           type: string
           example: c3d4e5f6g7
@@ -426,19 +491,26 @@ components:
               required:
                 - data
           required:
-            - amount
-            - reference
+            - sender
+            - recipient
         meta:
           type: object
+          readOnly: true
           properties:
+            code:
+              type: string
+              enum:
+                - AMOUNT_TRANSFERRED
+                - AMOUNT_CREDITED
+                - AMOUNT_DISSOLVED
+              example: AMOUNT_TRANSFERRED
             exchangeRate:
               type: number
-              readOnly: true
               example: 1
+              minimum: 0
             createdAt:
               type: string
               format: date-time
-              readOnly: true
               example: '2023-07-12T19:00:00.000Z'
           required:
             - createdAt
@@ -446,15 +518,16 @@ components:
         - type
         - id
         - attributes
+        - meta
 
 security:
   - AuthToken: []
 
 tags:
+  - name: Introduction
   - name: Tenants
   - name: Accounts
   - name: Transactions
-  - name: Static
 
 paths:
 
@@ -463,7 +536,7 @@ paths:
       summary: Check Authentication
       operationId: ping
       security: []
-      tags: [Tenants]
+      tags: [Introduction]
       responses:
         200:
           description: Success
@@ -494,6 +567,8 @@ paths:
                       github:
                         type: string
                         example: https://github.com/testbankhq
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
         500:
           $ref: '#/components/responses/ErrDefault'
 
@@ -522,6 +597,10 @@ paths:
                 required:
                   - data
                   - meta
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
         500:
           $ref: '#/components/responses/ErrDefault'
     post:
@@ -549,6 +628,8 @@ paths:
                     relationships:
                       type: object
                       properties:
+                        currency:
+                          $ref: '#/components/schemas/Account/properties/relationships/properties/currency'
                         initialBalance:
                           type: object
                           properties:
@@ -564,6 +645,8 @@ paths:
                                 - attributes
                           required:
                             - data
+                      required:
+                        - currency
                     meta:
                       $ref: '#/components/schemas/Account/properties/meta'
                   required:
@@ -591,6 +674,8 @@ paths:
                       relationships:
                         type: object
                         properties:
+                          currency:
+                            $ref: '#/components/schemas/Account/properties/relationships/properties/currency'
                           initialTransaction:
                             type: object
                             properties:
@@ -606,6 +691,8 @@ paths:
                                   - id
                             required:
                               - data
+                        required:
+                          - currency
                       meta:
                         $ref: '#/components/schemas/Account/properties/meta'
                     required:
@@ -615,8 +702,15 @@ paths:
                       - meta
                 required:
                   - data
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
+        404:
+          $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
+
   /accounts/{accountId}:
     parameters:
       - $ref: '#/components/parameters/AccountIdPath'
@@ -636,6 +730,12 @@ paths:
                     $ref: '#/components/schemas/Account'
                 required:
                   - data
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
+        404:
+          $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
     patch:
@@ -665,6 +765,12 @@ paths:
                     $ref: '#/components/schemas/Account'
                 required:
                   - data
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
+        404:
+          $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
     delete:
@@ -674,6 +780,12 @@ paths:
       responses:
         204:
           description: Confirmation the account is deleted.
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
+        404:
+          $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
 
@@ -683,6 +795,30 @@ paths:
       operationId: listTransactions
       tags: [Transactions]
       parameters:
+        - in: query
+          name: filter[account]
+          description: Filter all transactions where either the sender or recipient is a specific account ID.
+          schema:
+            type: string
+            example: a1b2c3d4e5
+        - in: query
+          name: filter[sender]
+          description: Filter all transactions where the sender is a specific account ID.
+          schema:
+            type: string
+            example: a1b2c3d4e5
+        - in: query
+          name: filter[recipient]
+          description: Filter all transactions where the recipient is a specific account ID.
+          schema:
+            type: string
+            example: a1b2c3d4e5
+        - in: query
+          name: filter[reference]
+          description: Filter all transactions where the reference contains a specific substring.
+          schema:
+            type: string
+            example: hello-world
         - $ref: '#/components/parameters/JsonApiPageCountQuery'
         - $ref: '#/components/parameters/JsonApiPageLimitQuery'
       responses:
@@ -702,6 +838,10 @@ paths:
                 required:
                   - data
                   - meta
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
         500:
           $ref: '#/components/responses/ErrDefault'
     post:
@@ -731,6 +871,12 @@ paths:
                     $ref: '#/components/schemas/Transaction'
                 required:
                   - data
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
+        404:
+          $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
   /transactions/{transactionId}:
@@ -752,6 +898,12 @@ paths:
                     $ref: '#/components/schemas/Transaction'
                 required:
                   - data
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
+        404:
+          $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
     patch:
@@ -781,6 +933,12 @@ paths:
                     $ref: '#/components/schemas/Transaction'
                 required:
                   - data
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
+        404:
+          $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
     delete:
@@ -790,6 +948,12 @@ paths:
       responses:
         204:
           description: Confirmation the transaction is deleted.
+        401:
+          $ref: '#/components/responses/ErrNotAuthenticated'
+        403:
+          $ref: '#/components/responses/ErrForbidden'
+        404:
+          $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
 
@@ -798,10 +962,10 @@ paths:
       summary: Get Currencies
       operationId: getCurrencies
       security: []
-      tags: [Static]
+      tags: [Introduction]
       responses:
         200:
-          description: List of currency codes
+          description: List of supported currencies
           content:
             application/json:
               schema:
@@ -810,33 +974,6 @@ paths:
                   data:
                     type: array
                     items:
-                      type: object
-                      title: Currency
-                      properties:
-                        code:
-                          type: string
-                          example: USD
-                        icon:
-                          type: string
-                          example: 🇺🇸
-                        name:
-                          type: string
-                          example: United States Dollar
-                        rate:
-                          type: number
-                          example: 1
-                      required:
-                        - code
-                        - name
-              example:
-                data:
-                  - code: USD
-                    name: United States Dollar
-                    icon: 🇺🇸
-                    rate: 1
-                  - code: GBP
-                    name: Great British Pound
-                    icon: 🇬🇧
-                    rate: 0.763487
+                      $ref: "#/components/schemas/Currency"
         500:
           $ref: '#/components/responses/ErrDefault'

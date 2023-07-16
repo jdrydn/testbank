@@ -1,9 +1,19 @@
+import assert from 'assert';
+
 Object.assign(process.env, {
-  MYSQL_URI: process.env.MYSQL_URI ?? 'mysql://developer:f69bbd182b5828921b295d5e7aeb1378@127.0.0.1:3306/testbank-dev',
+  NODE_ENV: 'testing',
+  LOG_LEVEL: process.env.LOG_LEVEL ?? 'fatal',
+});
+
+before(() => {
+  assert(process.env.MYSQL_URI, 'Expected MYSQL_URI env to be set');
+  console.log('Seeding database: %s', process.env.MYSQL_URI);
+  return new Promise<void>(resolve => setTimeout(() => resolve(), 1900));
 });
 
 before(async () => {
+  assert(process.env.MYSQL_URI, 'Expected MYSQL_URI env to be set');
   const { seedData } = await import('./database/import');
   await seedData();
-  console.log('Database seeded: %s\n\n', process.env.MYSQL_URI!);
+  process.stdout.write('\n\n');
 });
