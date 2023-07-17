@@ -34,6 +34,7 @@ export interface KoaRequest extends Koa.Request {
 }
 
 export interface KoaContext<Body = unknown> extends Koa.ParameterizedContext<AppState, AppContext, Body> {
+  params?: Record<string, string | undefined>,
   request: KoaRequest,
   req: KoaRequest['req'],
 }

@@ -27,6 +27,7 @@ export async function wrapErrorMiddleware(ctx: KoaContext, next: NextFunction) {
 
 export function formatErr(err: ValidationError | (Error & Record<string, unknown>)): Record<string, unknown>[] {
   if (err instanceof ValidationError) {
+    console.error({ ...err });
     return err.inner.map(e => ({
       status: 400,
       title: 'A validation error occurred',

@@ -1,7 +1,8 @@
 import assert from 'assert';
 import ms from 'ms';
 import mysql from 'mysql2/promise';
-import sqlbricks from 'sql-bricks';
+import squel from 'squel';
+import { format as formatDate } from 'date-fns';
 
 const client = mysql.createPool({
   uri: process.env.MYSQL_URI ?? 'mysql://127.0.0.1:3306/test',
@@ -18,11 +19,47 @@ const client = mysql.createPool({
   },
 });
 
-export const sql: typeof sqlbricks & { _autoQuoteChar?: string } = sqlbricks;
-// @LINK https://github.com/tamarzil/mysql-bricks/blob/d981523863c428145fc5e4976e53fb0aca0a3a39/index.js#L9
-// unfortunately, for now, this can only be done by overriding sql-bricks module itself
-// see issue https://github.com/CSNW/sql-bricks/issues/104
-sql._autoQuoteChar = '`';
+export const sql = (() => {
+  const flavour = squel.useFlavour('mysql');
+
+  interface MysqlSquel extends squel.MysqlSquel {
+    selectFoundRows: () => squel.Select,
+  }
+
+  Object.defineProperties(flavour, {
+    /**
+     * Useful modification to the standard SELECT squel constructor to add SQL_CALC_FOUND_ROWS to the SELECT block
+     */
+    selectFoundRows: {
+      enumerable: true,
+      value: function selectFoundRows() {
+        return sql.select(null, [
+          new squel.cls.StringBlock(null, 'SELECT SQL_CALC_FOUND_ROWS'),
+          new squel.cls.FunctionBlock(undefined),
+          new squel.cls.DistinctBlock(undefined),
+          new squel.cls.GetFieldBlock(undefined),
+          new squel.cls.FromTableBlock(undefined),
+          new squel.cls.JoinBlock(undefined),
+          new squel.cls.WhereBlock(undefined),
+          new squel.cls.GroupByBlock(undefined),
+          new squel.cls.HavingBlock(undefined),
+          new squel.cls.OrderByBlock(undefined),
+          new squel.cls.LimitBlock(undefined),
+          new squel.cls.OffsetBlock(undefined),
+          new squel.cls.UnionBlock(undefined),
+        ]);
+      },
+    },
+  });
+
+  /**
+   * Common query transformations, for Dates & undefined types
+   */
+  squel.registerValueHandler(Date, value => formatDate(value, 'YYYY-MM-DDTHH:mm:ss'));
+  squel.registerValueHandler('undefined', () => null as any);
+
+  return flavour as MysqlSquel;
+})();
 
 export type MysqlSession = mysql.PoolConnection;
 
@@ -47,26 +84,22 @@ export async function getMysqlConnection<T = any>(
 }
 
 export async function mysqlQuery<T = Record<string, any>>(
-  query: sqlbricks.SelectStatement,
-  conn?: MysqlSession,
-  { foundRows }?: { foundRows?: true },
+  query: squel.Select, conn?: MysqlSession,
 ): Promise<MysqlReadResult<T>>;
 export async function mysqlQuery<T = number>(
-  query: sqlbricks.InsertStatement, conn?: MysqlSession
+  query: squel.Insert, conn?: MysqlSession
 ): Promise<MysqlWriteResult<T>>;
 export async function mysqlQuery(
-  query: sqlbricks.UpdateStatement, conn?: MysqlSession
+  query: squel.Update, conn?: MysqlSession
 ): Promise<MysqlWriteResult>;
 export async function mysqlQuery(
-  query: sqlbricks.DeleteStatement, conn?: MysqlSession
+  query: squel.Delete, conn?: MysqlSession
 ): Promise<MysqlWriteResult>;
 export async function mysqlQuery<R = unknown, W = number>(
-  query: sqlbricks.Statement | string | [string, any[]],
+  query: squel.QueryBuilder | string | [string, any[]],
 ): Promise<MysqlReadResult<R> | MysqlWriteResult<W>>;
 export async function mysqlQuery<R = Record<string, any>, W = never>(
-  query: sqlbricks.Statement | string | [string, any[]],
-  conn?: MysqlSession | undefined,
-  { foundRows }: { foundRows?: true } = {},
+  query: squel.QueryBuilder | string | [string, any[]], conn?: MysqlSession | undefined,
 ): Promise<MysqlReadResult<R> | MysqlWriteResult<W>> {
   let text: string = '';
   let values: any[] = [];
@@ -76,16 +109,15 @@ export async function mysqlQuery<R = Record<string, any>, W = never>(
   } else if (typeof query === 'string') {
     text = query;
   } else {
-    assert(query && typeof query.toParams === 'function',
+    assert(query && typeof query.toParam === 'function',
       new TypeError(`Expected query to be a Statement | string | [string, any[]] but found: ${typeof query}`));
-    ({ text, values } = query.toParams({ placeholder: '?' }));
+    ({ text, values } = query.toParam());
   }
 
   // console.log({ text, values });
 
   try {
-    if (text.trim().toUpperCase().startsWith('SELECT') && foundRows === true) {
-      text = text.replace(/^SELECT /i, 'SELECT SQL_CALC_FOUND_ROWS ');
+    if (text.trim().toUpperCase().startsWith('SELECT SQL_CALC_FOUND_ROWS')) {
       return getMysqlConnection(conn, async c => {
         const [ rows, fields ] = await (conn ?? client).query(text, values);
         const foundQuery = 'SELECT FOUND_ROWS() AS foundRows';
@@ -161,7 +193,7 @@ class MysqlReadResult<T = Record<string, any>> {
     return (Array.isArray(this.rows) ? this.rows : []).slice().shift();
   }
 
-  column<U = string>(): U[] | null {
+  column<U = string>(): U[] {
     if (this.fields.length) {
       const [field] = this.fields;
       return this.rows.reduce((values, row) => {
@@ -179,9 +211,9 @@ class MysqlReadResult<T = Record<string, any>> {
     if (this.rows.length && this.fields.length) {
       const [row] = this.rows;
       const [field] = this.fields;
-      return Object.prototype.hasOwnProperty.call(row, field) ? row[field as keyof typeof row] as U : null;
+      return Object.prototype.hasOwnProperty.call(row, field) ? row[field as keyof typeof row] as U : undefined;
     } else {
-      return null;
+      return undefined;
     }
   }
 

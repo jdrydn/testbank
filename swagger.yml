@@ -32,7 +32,7 @@ components:
         format: md5
         example: '"36c2723e9db88e9024393f96542924cf"'
     LastModified:
-      description: When this resource was Last-Modified
+      description: Date when this resource was Last-Modified
       schema:
         type: string
         format: date-time-gmt-string
@@ -201,6 +201,29 @@ components:
                   code: RESOURCE_NOT_FOUND
                   status: 404
 
+    ErrDeleteConfirmLastModified:
+      description: Please confirm deletion using `Last-Modified`
+      headers:
+        Last-Modified:
+          $ref: "#/components/headers/LastModified"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JsonApiResourceError'
+            required:
+              - errors
+            example:
+              errors:
+                - title: Confirmation required
+                  detail: Please confirm you would like to delete this resource.
+                  code: DELETE_CONFIRM_LAST_MODIFIED
+                  status: 412
+
   schemas:
 
     JsonApiResourceMeta:
@@ -321,7 +344,6 @@ components:
           type: string
           format: money-currency
           example: USD
-          readOnly: true
         attributes:
           type: object
           properties:
@@ -364,7 +386,6 @@ components:
         id:
           type: string
           example: a1b2c3d4e5
-          readOnly: true
         attributes:
           type: object
           properties:
@@ -410,17 +431,14 @@ components:
             balanceTotal:
               type: string
               example: '100.00'
-              readOnly: true
             createdAt:
               type: string
               format: date-time
               example: '2023-07-12T19:00:00.000Z'
-              readOnly: true
             updatedAt:
               type: string
               format: date-time
               example: '2023-07-12T19:00:00.000Z'
-              readOnly: true
           required:
             - balanceTotal
             - createdAt
@@ -442,7 +460,6 @@ components:
         id:
           type: string
           example: c3d4e5f6g7
-          readOnly: true
         attributes:
           type: object
           properties:
@@ -495,15 +512,7 @@ components:
             - recipient
         meta:
           type: object
-          readOnly: true
           properties:
-            code:
-              type: string
-              enum:
-                - AMOUNT_TRANSFERRED
-                - AMOUNT_CREDITED
-                - AMOUNT_DISSOLVED
-              example: AMOUNT_TRANSFERRED
             exchangeRate:
               type: number
               example: 1
@@ -525,7 +534,7 @@ security:
 
 tags:
   - name: Introduction
-  - name: Tenants
+  # - name: Tenants
   - name: Accounts
   - name: Transactions
 
@@ -533,8 +542,11 @@ paths:
 
   /:
     get:
-      summary: Check Authentication
       operationId: ping
+      summary: Check Authentication
+      description: >
+        A simple endpoint to check if the API is operational, and optionally can be used to check if your
+        authentication token is valid.
       security: []
       tags: [Introduction]
       responses:
@@ -574,10 +586,33 @@ paths:
 
   /accounts:
     get:
-      summary: List accounts
       operationId: listAccounts
+      summary: List accounts
+      description: >
+        List all accounts.
       tags: [Accounts]
       parameters:
+        - in: query
+          name: filter[name]
+          description: Filter all accounts where the name contains a specific substring.
+          schema:
+            $ref: "#/components/schemas/Account/properties/attributes/properties/name"
+        - in: query
+          name: filter[visibility]
+          description: Filter all accounts where the currency matches a specific Currency Code.
+          schema:
+            $ref: "#/components/schemas/Account/properties/attributes/properties/visibility"
+        - in: query
+          name: filter[currency]
+          description: Filter all accounts where the currency matches a specific Currency Code.
+          schema:
+            type: string
+            $ref: "#/components/schemas/Currency/properties/id"
+        - in: query
+          name: filter[externalId]
+          description: Filter all accounts where the externalId matches a specific string.
+          schema:
+            $ref: "#/components/schemas/Account/properties/meta/properties/externalId"
         - $ref: '#/components/parameters/JsonApiPageCountQuery'
         - $ref: '#/components/parameters/JsonApiPageLimitQuery'
       responses:
@@ -607,9 +642,9 @@ paths:
       summary: Create account
       operationId: createAccount
       description: >
-        Create a new account, with a specific name & currency code. Optionally attach an external ID so you can track
-        this account in your integration. Optionally include an initial balance transaction to seed the account with
-        funds immediately.
+        Create a new account, with a name, visibility & currency.<br/>
+        Optionally include an external ID so you can tie this account with a resource from your side.<br/>
+        Optionally include an initial transaction to set the opening balance.
       tags: [Accounts]
       requestBody:
         required: true
@@ -648,7 +683,10 @@ paths:
                       required:
                         - currency
                     meta:
-                      $ref: '#/components/schemas/Account/properties/meta'
+                      type: object
+                      properties:
+                        externalId:
+                          $ref: '#/components/schemas/Account/properties/meta/properties/externalId'
                   required:
                     - type
                     - attributes
@@ -715,8 +753,10 @@ paths:
     parameters:
       - $ref: '#/components/parameters/AccountIdPath'
     get:
-      summary: Get account by ID
       operationId: getAccount
+      summary: Get account by ID
+      description: >
+        Get a specific account by ID.
       tags: [Accounts]
       responses:
         200:
@@ -739,8 +779,11 @@ paths:
         500:
           $ref: '#/components/responses/ErrDefault'
     patch:
-      summary: Update account
       operationId: updateAccount
+      summary: Update account
+      description: >
+        Update an account's name, visibility & external ID.<br/>
+        You <strong>cannot change</strong> an account's currency once opened.
       tags: [Accounts]
       requestBody:
         required: true
@@ -750,7 +793,20 @@ paths:
               type: object
               properties:
                 data:
-                  $ref: '#/components/schemas/Account'
+                  type: object
+                  properties:
+                    type:
+                      $ref: '#/components/schemas/Account/properties/type'
+                    attributes:
+                      $ref: '#/components/schemas/Account/properties/attributes'
+                    meta:
+                      type: object
+                      properties:
+                        externalId:
+                          $ref: '#/components/schemas/Account/properties/meta/properties/externalId'
+                  required:
+                    - type
+                    - attributes
               required:
                 - data
       responses:
@@ -774,9 +830,22 @@ paths:
         500:
           $ref: '#/components/responses/ErrDefault'
     delete:
-      summary: Delete account
       operationId: deleteAccount
+      summary: Delete account
+      description: >
+        Delete an account & all data related to the account.<br/>
+        <strong>Please note:</strong> This may not delete all account & transaction data - other accounts' transactions
+        will retain the account ID. All other attributes will cleared.
       tags: [Accounts]
+      parameters:
+        - in: header
+          name: If-Unmodified-Since
+          description: >
+            A `Last-Modified` header from a previous response to this endpoint.
+            If the Last Modified date of the resource matches this value, then the resource will be successfully
+            deleted.
+          schema:
+            $ref: '#/components/headers/LastModified/schema'
       responses:
         204:
           description: Confirmation the account is deleted.
@@ -786,6 +855,8 @@ paths:
           $ref: '#/components/responses/ErrForbidden'
         404:
           $ref: '#/components/responses/ErrNotFound'
+        412:
+          $ref: '#/components/responses/ErrDeleteConfirmLastModified'
         500:
           $ref: '#/components/responses/ErrDefault'
 
@@ -856,7 +927,18 @@ paths:
               type: object
               properties:
                 data:
-                  $ref: '#/components/schemas/Transaction'
+                  type: object
+                  properties:
+                    type:
+                      $ref: '#/components/schemas/Transaction/properties/type'
+                    attributes:
+                      $ref: '#/components/schemas/Transaction/properties/attributes'
+                    relationships:
+                      $ref: '#/components/schemas/Transaction/properties/relationships'
+                  required:
+                    - type
+                    - id
+                    - attributes
               required:
                 - data
       responses:
@@ -879,6 +961,7 @@ paths:
           $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
+
   /transactions/{transactionId}:
     parameters:
       - $ref: '#/components/parameters/TransactionIdPath'
@@ -906,45 +989,22 @@ paths:
           $ref: '#/components/responses/ErrNotFound'
         500:
           $ref: '#/components/responses/ErrDefault'
-    patch:
-      summary: Update transaction
-      operationId: updateTransaction
-      tags: [Transactions]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                data:
-                  $ref: '#/components/schemas/Transaction'
-              required:
-                - data
-      responses:
-        200:
-          description: Updated transaction
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Transaction'
-                required:
-                  - data
-        401:
-          $ref: '#/components/responses/ErrNotAuthenticated'
-        403:
-          $ref: '#/components/responses/ErrForbidden'
-        404:
-          $ref: '#/components/responses/ErrNotFound'
-        500:
-          $ref: '#/components/responses/ErrDefault'
     delete:
-      summary: Delete transaction
       operationId: deleteTransaction
+      summary: Delete transaction
+      description: >
+        (Admin-only) Delete a transaction, effectively reversing the transaction & fixing the balance of the two
+        accounts.
       tags: [Transactions]
+      parameters:
+        - in: header
+          name: If-Unmodified-Since
+          description: >
+            A `Last-Modified` header from a previous response to this endpoint.
+            If the Last Modified date of the resource matches this value, then the resource will be successfully
+            deleted.
+          schema:
+            $ref: '#/components/headers/LastModified/schema'
       responses:
         204:
           description: Confirmation the transaction is deleted.
@@ -954,13 +1014,17 @@ paths:
           $ref: '#/components/responses/ErrForbidden'
         404:
           $ref: '#/components/responses/ErrNotFound'
+        412:
+          $ref: '#/components/responses/ErrDeleteConfirmLastModified'
         500:
           $ref: '#/components/responses/ErrDefault'
 
   /currencies:
     get:
-      summary: Get Currencies
       operationId: getCurrencies
+      summary: Get Currencies
+      description: >
+        Fetch a list of supported currencies.
       security: []
       tags: [Introduction]
       responses:

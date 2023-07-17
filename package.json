@@ -23,6 +23,7 @@
     "@koa/router": "^12.0.0",
     "axios": "^1.4.0",
     "bunyan": "^1.8.15",
+    "date-fns": "^2.30.0",
     "hashids": "^2.3.0",
     "http-assert-plus": "^2.0.1",
     "jsonapi-resolvers": "^2.0.0-beta.2",
@@ -33,6 +34,7 @@
     "mysql2": "^3.4.2",
     "serverless-http": "^3.2.0",
     "sql-bricks": "^3.0.0",
+    "squel": "^5.13.0",
     "yup": "^1.2.0"
   },
   "devDependencies": {

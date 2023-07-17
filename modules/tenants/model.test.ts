@@ -21,7 +21,7 @@ describe('modules/tenants/model', () => {
   });
 
   describe('#createTenant', () => {
-    afterEach(() => mysqlQuery(sql.delete('Tenant').where('email', 'test@testbank.dev')));
+    afterEach(() => mysqlQuery(sql.delete().from('Tenant').where('email = ?', 'test@testbank.dev')));
 
     it('should create a Tenant', async () => {
       const tenantId = await tenants.createTenant({
@@ -44,7 +44,7 @@ describe('modules/tenants/model', () => {
         assert.strictEqual(err.message, 'Duplicate entry \'root@testbank.dev\' for key \'Tenant.email\'');
         assert.strictEqual(err.code, 'ER_DUP_ENTRY');
         assert.deepStrictEqual(err.sql, {
-          text: 'INSERT INTO `Tenant` (name, email) VALUES (?, ?)',
+          text: 'INSERT INTO Tenant (name, email) VALUES (?, ?)',
           values: ['Second Root', 'root@testbank.dev'],
         });
       }
@@ -53,11 +53,11 @@ describe('modules/tenants/model', () => {
 
   describe('#updateTenant', () => {
     let tenantId: number;
-    before(async () => ({ insertId: tenantId } = await mysqlQuery(sql.insert('Tenant').values({
+    before(async () => ({ insertId: tenantId } = await mysqlQuery(sql.insert().into('Tenant').setFields({
       name: 'Test Tenant',
       email: 'test@testbank.dev',
     }))));
-    after(async () => await mysqlQuery(sql.delete('Tenant').where('id', tenantId)));
+    after(async () => await mysqlQuery(sql.delete().from('Tenant').where('id = ?', tenantId)));
 
     it('should update a Tenant by ID', async () => {
       const updated = await tenants.updateTenantById(tenantId, {
@@ -78,11 +78,11 @@ describe('modules/tenants/model', () => {
 
   describe('#deleteTenant', () => {
     let tenantId: number;
-    before(async () => ({ insertId: tenantId } = await mysqlQuery(sql.insert('Tenant').values({
+    before(async () => ({ insertId: tenantId } = await mysqlQuery(sql.insert().into('Tenant').setFields({
       name: 'Test Tenant',
       email: 'test@testbank.dev',
     }))));
-    after(async () => await mysqlQuery(sql.delete('Tenant').where('id', tenantId)));
+    after(async () => await mysqlQuery(sql.delete().from('Tenant').where('id = ?', tenantId)));
 
     it('should delete a Tenant by ID', async () => {
       const deleted = await tenants.deleteTenantById(tenantId);

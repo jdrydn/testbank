@@ -13,7 +13,7 @@ interface CurrencyResource extends JsonApiResource {
   },
 }
 
-export default function welcome(ctx: KoaContext<JsonApiRoot>): void {
+export default function listCurrenciesEndpoint(ctx: KoaContext<JsonApiRoot>): void {
   ctx.status = 200;
   ctx.body = {
     data: Object.entries(currencies).map(([code, attributes]): CurrencyResource => ({
