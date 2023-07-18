@@ -1,7 +1,6 @@
 import request from './test/request';
-import { version } from './routes/welcome';
-
 import { API_AUTH_HEADER } from './test/config';
+import { version } from './routes/welcome';
 
 describe('services/rest-api', () => {
 

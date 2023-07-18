@@ -5,11 +5,10 @@ import { getMysqlTransaction } from '@/lib/mysql';
 import { createAccount, getAccountById } from '@/modules/accounts/model';
 import { transformPrivateAccount } from '@/modules/accounts/resolver';
 import { validate, yup } from '@/lib/validate';
-// import { transformPrivateAccount } from '@/modules/accounts/resolver';
 
 import { KoaContext, setRes } from '../context';
 
-export default async function createAccountEndpoint(ctx: KoaContext<JsonApiRoot>) {
+export default async function createAccountRoute(ctx: KoaContext<JsonApiRoot>) {
   const { tenantId } = ctx.state;
   assert(tenantId, 401, 'Not authenticated');
 
@@ -18,7 +17,7 @@ export default async function createAccountEndpoint(ctx: KoaContext<JsonApiRoot>
       type: yup.string().required().oneOf(['accounts']),
       attributes: yup.object().required().shape({
         name: yup.string().required(),
-        visibility: yup.string<'PRIVATE' | 'UNLISTED' | 'PUBLIC'>().required().oneOf(['PRIVATE', 'UNLISTED', 'PUBLIC']),
+        visibility: yup.string<'PRIVATE' | 'UNLISTED' | 'PUBLIC'>().default('PRIVATE').oneOf(['PRIVATE', 'UNLISTED', 'PUBLIC']),
       }),
       relationships: yup.object().required().shape({
         currency: yup.object().required().shape({

@@ -5,7 +5,7 @@ import type { KoaContext } from '../context';
 
 export { version };
 
-export default function welcome(ctx: KoaContext<Pick<JsonApiRoot, 'meta' | 'links'>>): void {
+export default function welcomeRoute(ctx: KoaContext<Pick<JsonApiRoot, 'meta' | 'links'>>): void {
   const { tenantId } = ctx.state;
 
   ctx.status = 200;

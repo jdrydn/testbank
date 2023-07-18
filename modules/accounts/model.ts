@@ -1,5 +1,7 @@
 import { mysqlQuery, sql, MysqlSession } from '@/lib/mysql';
 
+import { decodeAccountId } from './controller';
+
 export interface Account {
   name: string,
   externalId?: string | undefined,
@@ -20,10 +22,22 @@ export interface AccountItem extends Account {
   deletedAt?: Date,
 }
 
-export async function getAccountById(tenantId: number, id: number, { session }: {
+export async function getAccountById(tenantId: number, id: string | number, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<AccountItem | undefined> {
   const selectQuery = sql.select().from('Account').where('tenantId = ? AND id = ?', tenantId, id);
+
+  if (typeof id === 'string') {
+    const [tId2, aId] = decodeAccountId(id);
+    if (tenantId !== tId2) {
+      // Return `undefined` early if the tenant ID is mismatch
+      return undefined;
+    }
+    selectQuery.where('tenantId = ? AND id = ?', tenantId, aId);
+  } else {
+    selectQuery.where('tenantId = ? AND id = ?', tenantId, id);
+  }
+
   return (await mysqlQuery<AccountItem>(selectQuery, session)).first();
 }
 

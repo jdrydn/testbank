@@ -8,7 +8,7 @@ import { transformPrivateAccount } from '@/modules/accounts/resolver';
 
 import { KoaContext, setRes } from '../context';
 
-export default async function listAccountsEndpoint(ctx: KoaContext<JsonApiRoot>) {
+export default async function listAccountsRoute(ctx: KoaContext<JsonApiRoot>) {
   const { tenantId } = ctx.state;
   assert(tenantId, 401, 'Not authenticated');
 
