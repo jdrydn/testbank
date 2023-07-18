@@ -4,7 +4,8 @@ import type { JsonApiRoot } from 'jsonapi-resolvers';
 import { decodeAccountId } from '@/modules/accounts/controller';
 import { getAccountById } from '@/modules/accounts/model';
 import { transformPrivateAccount } from '@/modules/accounts/resolver';
-import type { KoaContext } from '../context';
+
+import { KoaContext, setRes } from '../context';
 
 export default async function getAccountEndpoint(ctx: KoaContext<JsonApiRoot>) {
   const { tenantId } = ctx.state;
@@ -22,10 +23,14 @@ export default async function getAccountEndpoint(ctx: KoaContext<JsonApiRoot>) {
   const [tId2, accountId] = decodeAccountId(encodedAccountId);
   assert(tenantId === tId2, 404, 'Tenant ID mismatch', { ...errDetails, tenantId, tenantId2: tId2 });
 
-  const account = await getAccountById(tenantId, accountId);
-  assert(account?.id, 404, 'Account not found by ID', { ...errDetails, tenantId, accountId });
+  const accountItem = await getAccountById(tenantId, accountId);
+  assert(accountItem?.id, 404, 'Account not found by ID', { ...errDetails, tenantId, accountId });
 
-  const data = transformPrivateAccount(account);
-  ctx.status = 200;
-  ctx.body = { data };
+  setRes(ctx, {
+    data: transformPrivateAccount(accountItem),
+  }, {
+    date: true,
+    etag: true,
+    lastModified: accountItem.updatedAt,
+  });
 }

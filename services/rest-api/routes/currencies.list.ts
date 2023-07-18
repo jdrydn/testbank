@@ -1,25 +1,18 @@
-import type { JsonApiRoot, JsonApiResource } from 'jsonapi-resolvers';
+import type { JsonApiRoot } from 'jsonapi-resolvers';
 
-import { currencies, Currency } from '@/modules/currencies/static';
-import type { KoaContext } from '../context';
+import { currencies, CurrencyResource } from '@/modules/currencies/static';
 
-interface CurrencyResource extends JsonApiResource {
-  type: 'currencies',
-  id: string,
-  attributes: {
-    name: Currency['name'],
-    symbol: Currency['symbol'],
-    icon: Currency['icon'],
-  },
-}
+import { KoaContext, setRes } from '../context';
 
 export default function listCurrenciesEndpoint(ctx: KoaContext<JsonApiRoot>): void {
-  ctx.status = 200;
-  ctx.body = {
+  setRes(ctx, {
     data: Object.entries(currencies).map(([code, attributes]): CurrencyResource => ({
       type: 'currencies',
       id: code,
       attributes,
     })),
-  };
+  }, {
+    date: true,
+    etag: true,
+  });
 };

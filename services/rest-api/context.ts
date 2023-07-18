@@ -104,6 +104,68 @@ export const AppRequestProps: PropertyDescriptorMap & ThisType<KoaRequest> = {
   },
 };
 
+export function setRes<T>(ctx: KoaContext<T>, body: T, {
+  cacheControl, location,
+  date, expires,
+  lastModified, ifModifiedSince,
+  etag, ifNoneMatch,
+  status, statusIfMatch,
+}: {
+  cacheControl?: string, location?: string,
+  date?: boolean, expires?: string | Date,
+  lastModified?: Date, ifModifiedSince?: boolean,
+  etag?: boolean, ifNoneMatch?: boolean,
+  status?: number, statusIfMatch?: number,
+} = {}): void {
+  const isMatchedResponses: boolean[] = [];
+
+  if (cacheControl) {
+    ctx.set('Cache-Control', cacheControl);
+  }
+
+  if (date || expires) {
+    const now = new Date();
+    ctx.set('Date', now.toUTCString());
+
+    if (expires instanceof Date) {
+      ctx.set('Expires', expires.toUTCString());
+    } else if (expires) {
+      ctx.set('Expires', (new Date(now.getTime() + ms(expires)).toUTCString()));
+    }
+  }
+
+  if (lastModified) {
+    ctx.set('Last-Modified', lastModified.toUTCString());
+
+    if (ifModifiedSince && ctx.get('If-Modified-Since') === lastModified.toUTCString()) {
+      isMatchedResponses.push(true);
+    }
+  }
+
+  if (etag || ifNoneMatch) {
+    const etagHash = createHashMd5(JSON.stringify(body));
+    ctx.set('Etag', etagHash);
+
+    if (ifNoneMatch && ctx.get('If-None-Match') === etagHash) {
+      // If the etag matches If-None-Match then return a blank 304
+      isMatchedResponses.push(true);
+    }
+  }
+
+  if (location) {
+    ctx.set('Location', location);
+  }
+
+  if (isMatchedResponses.length && isMatchedResponses.reduce((a, b) => a && b)) {
+    // If this is a "matched" response, then return a blank 304
+    ctx.status = statusIfMatch ?? 304;
+  } else {
+    // If there is an object of data, then return 200 OK & the data
+    ctx.status = status ?? 200;
+    ctx.body = body;
+  }
+}
+
 export const serverlessHttpOpts: ServerlessHttpOptions = {
   request(req: any, event: APIGatewayProxyEventV2, context: Context & { startedAt: number }) {
     context.startedAt = Date.now();

@@ -1,7 +1,7 @@
 import type { JsonApiResource } from 'jsonapi-resolvers';
 
 import { encodeAccountId, decodeAccountId } from './controller';
-import { AccountItem, AccountVisibility, findAccountsById } from './model';
+import { AccountItem, findAccountsById } from './model';
 
 export const JSONAPI_TYPE = 'accounts';
 
@@ -20,7 +20,7 @@ export type PrivateAccountJsonApiResource = JsonApiResource & {
     name: string,
     email?: string | undefined,
     phone?: string | undefined,
-    visibility: typeof AccountVisibility[keyof typeof AccountVisibility],
+    visibility: 'PRIVATE' | 'UNLISTED' | 'PUBLIC',
   },
   relationships: {
     // tenant: { data: { type: 'tenants', id: string } } | undefined,
@@ -73,7 +73,7 @@ export function transformPrivateAccount(entry: AccountItem): PrivateAccountJsonA
       name: entry.name,
       email: entry.email,
       phone: entry.phone,
-      visibility: AccountVisibility[entry.visibility],
+      visibility: entry.visibility,
     },
     relationships: {
       // tenant: { data: { type: 'tenants', id: entry.tenantId } },
