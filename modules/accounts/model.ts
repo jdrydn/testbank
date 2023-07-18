@@ -9,7 +9,7 @@ export interface Account {
   currencyCode: string,
   balanceTotal: number,
   // balanceFractional?: number | undefined,
-  visibility: AccountVisibility,
+  visibility: 'PRIVATE' | 'UNLISTED' | 'PUBLIC',
 }
 
 export interface AccountItem extends Account {
@@ -19,12 +19,6 @@ export interface AccountItem extends Account {
   updatedAt: Date,
   deletedAt?: Date,
 }
-
-export enum AccountVisibility {
-  'PRIVATE' = 0,
-  'UNLISTED' = 1,
-  'PUBLIC' = 2,
-};
 
 export async function getAccountById(tenantId: number, id: number, { session }: {
   session?: MysqlSession | undefined,
