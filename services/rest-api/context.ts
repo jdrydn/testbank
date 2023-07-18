@@ -1,6 +1,7 @@
 import _isPlainObject from 'lodash/isPlainObject';
 import assert from 'http-assert-plus';
 import ms from 'ms';
+import { attempt, createHashMd5 } from '@someimportantcompany/utils';
 import { randomUUID } from 'crypto';
 import type Koa from 'koa';
 import type { APIGatewayProxyEventV2, Context } from 'aws-lambda';
@@ -8,7 +9,6 @@ import type { IncomingMessage } from 'http';
 import type { Options as ServerlessHttpOptions } from 'serverless-http';
 
 import logger from '@/lib/logger';
-import { attempt } from '@/lib/utils';
 
 import { createResolver } from './resolvers';
 
