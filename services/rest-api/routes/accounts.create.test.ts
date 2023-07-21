@@ -1,18 +1,23 @@
 import crypto from 'crypto';
 
 import { mysqlQuery, sql } from '@/lib/mysql';
+import { encodeAccountId } from '@/modules/hashes';
+import { getNextInsertId } from '@/test/database';
 
 import request from '../test/request';
 import { API_AUTH_HEADER } from '../test/config';
 
 describe('services/rest-api/routes/accounts.create', () => {
   const name = crypto.randomBytes(8).toString('hex');
+
   afterEach(async () => {
     const deleteQuery = sql.delete().from('Account').where('name = ?', name);
     await mysqlQuery(deleteQuery);
   });
 
   it('should successfully create a new account', async () => {
+    const accountId = encodeAccountId(await getNextInsertId('Account'));
+
     await request.post('/accounts')
       .set('Authorization', API_AUTH_HEADER)
       .send({
@@ -35,7 +40,7 @@ describe('services/rest-api/routes/accounts.create', () => {
       .expect({
         data: {
           type: 'accounts',
-          id: 'foobar',
+          id: accountId,
           attributes: {
             name,
             visibility: 'PRIVATE',
@@ -47,6 +52,13 @@ describe('services/rest-api/routes/accounts.create', () => {
                 id: 'USD',
               },
             },
+          },
+          links: {
+            self: `/accounts/${accountId}`,
+            transactions: `/transactions/?filter[account]=${accountId}`,
+          },
+          meta: {
+            balanceTotal: '0.00',
           },
         },
       });

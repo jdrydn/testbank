@@ -45,7 +45,7 @@ describe('modules/tenants/model', () => {
         assert.strictEqual(err.code, 'ER_DUP_ENTRY');
         assert.deepStrictEqual(err.sql, {
           text: 'INSERT INTO Tenant (name, email) VALUES (?, ?)',
-          values: ['Second Root', 'root@testbank.dev'],
+          values: [ 'Second Root', 'root@testbank.dev' ],
         });
       }
     });
@@ -57,7 +57,7 @@ describe('modules/tenants/model', () => {
       name: 'Test Tenant',
       email: 'test@testbank.dev',
     }))));
-    after(async () => await mysqlQuery(sql.delete().from('Tenant').where('id = ?', tenantId)));
+    after(() => mysqlQuery(sql.delete().from('Tenant').where('id = ?', tenantId)));
 
     it('should update a Tenant by ID', async () => {
       const updated = await tenants.updateTenantById(tenantId, {
@@ -82,7 +82,7 @@ describe('modules/tenants/model', () => {
       name: 'Test Tenant',
       email: 'test@testbank.dev',
     }))));
-    after(async () => await mysqlQuery(sql.delete().from('Tenant').where('id = ?', tenantId)));
+    after(() => mysqlQuery(sql.delete().from('Tenant').where('id = ?', tenantId)));
 
     it('should delete a Tenant by ID', async () => {
       const deleted = await tenants.deleteTenantById(tenantId);

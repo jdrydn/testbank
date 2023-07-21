@@ -12,6 +12,9 @@ export interface TenantItem extends Tenant {
   deletedAt?: Date,
 }
 
+/**
+ * Get tenant by ID
+ */
 export async function getTenantById(tenantId: number, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<TenantItem | undefined> {
@@ -19,6 +22,9 @@ export async function getTenantById(tenantId: number, { session }: {
   return (await mysqlQuery<TenantItem>(selectQuery, session)).first();
 }
 
+/**
+ * Find tenants by specific ID
+ */
 export async function findTenantsById(tenantIds: number[], { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<TenantItem[]> {
@@ -27,6 +33,9 @@ export async function findTenantsById(tenantIds: number[], { session }: {
   return rows;
 }
 
+/**
+ * Create a tenant
+ */
 export async function createTenant(create: Tenant, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<number> {
@@ -35,6 +44,9 @@ export async function createTenant(create: Tenant, { session }: {
   return insertId;
 }
 
+/**
+ * Update tenant by ID
+ */
 export async function updateTenantById(tenantId: number, update: Partial<Tenant>, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<boolean> {
@@ -43,6 +55,9 @@ export async function updateTenantById(tenantId: number, update: Partial<Tenant>
   return affectedRows === 1;
 }
 
+/**
+ * Delete tenant by ID
+ */
 export async function deleteTenantById(tenantId: number, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<boolean> {

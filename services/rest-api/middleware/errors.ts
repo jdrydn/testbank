@@ -23,7 +23,7 @@ export async function wrapErrorMiddleware(ctx: KoaContext, next: NextFunction) {
     ctx.body = { errors };
     ctx.log.error({ ctx, err });
   }
-};
+}
 
 export function formatErr(err: ValidationError | (Error & Record<string, unknown>)): Record<string, unknown>[] {
   if (err instanceof ValidationError) {
@@ -36,7 +36,7 @@ export function formatErr(err: ValidationError | (Error & Record<string, unknown
       source: e.path ? { pointer: `/${e.path.replace(/\./g, '/')}` } : undefined,
     }));
   } else if (err.code === 'VALIDATION_ERROR') {
-    return [{
+    return [ {
       id: typeof err.id === 'string' ? err.id : undefined,
       links: _isPlainObject(err.links) ? err.links : undefined,
       status: (typeof err.status === 'number' ? err.status : null)
@@ -46,10 +46,10 @@ export function formatErr(err: ValidationError | (Error & Record<string, unknown
       title: err.title || undefined,
       detail: err.userMessage || err.message || `${err}`,
       source: _isPlainObject(err.source) ? err.source : undefined,
-      meta: { fields: err.fields, },
-    }];
+      meta: { fields: err.fields },
+    } ];
   } else {
-    return [{
+    return [ {
       id: typeof err.id === 'string' ? err.id : undefined,
       links: _isPlainObject(err.links) ? err.links : undefined,
       status: (typeof err.status === 'number' ? err.status : null)
@@ -60,6 +60,6 @@ export function formatErr(err: ValidationError | (Error & Record<string, unknown
       detail: err.userMessage || err.message || `${err}`,
       source: _isPlainObject(err.source) ? err.source : undefined,
       meta: _isPlainObject(err.meta) ? err.meta : undefined,
-    }];
+    } ];
   }
 }

@@ -1,6 +1,6 @@
 import type { JsonApiResource } from 'jsonapi-resolvers';
 
-import { encodeAccountId, decodeAccountId } from './controller';
+import { encodeAccountId, decodeAccountId } from '../hashes';
 import { AccountItem, findAccountsById } from './model';
 
 export const JSONAPI_TYPE = 'accounts';
@@ -34,15 +34,18 @@ export type PrivateAccountJsonApiResource = JsonApiResource & {
   meta: {
     externalId?: string | undefined,
     balanceTotal: number,
-    // balanceFractional?: number,
     createdAt: string,
     updatedAt: string,
   },
 };
 
+/**
+ * Resolve IDs into accounts, decoding any string IDs as appropriate.
+ * If public data is allowed, transform any accounts for other tenants into "public" listings.
+ */
 export async function getAccountsById(currentTenantId: number, accountIds: (string | number)[], allowPublic = false):
 Promise<(PublicAccountJsonApiResource | PrivateAccountJsonApiResource)[]> {
-  const entryIds = accountIds.map(id => typeof id === 'string' ? decodeAccountId(id)[1] : id);
+  const entryIds = accountIds.map(id => (typeof id === 'string' ? decodeAccountId(id) : id));
   return (await findAccountsById(entryIds)).reduce((list, entry) => {
     if (entry?.id && entry.tenantId === currentTenantId) {
       list.push(transformPrivateAccount(entry));
@@ -54,25 +57,31 @@ Promise<(PublicAccountJsonApiResource | PrivateAccountJsonApiResource)[]> {
   }, [] as Awaited<ReturnType<typeof getAccountsById>>);
 }
 
+/**
+ * Transform a public account, severly limiting the amount of data returned.
+ */
 export function transformPublicAccount(entry: AccountItem): PublicAccountJsonApiResource {
   return {
     type: 'accounts',
-    id: encodeAccountId(entry.tenantId, entry.id),
+    id: encodeAccountId(entry.id),
     attributes: {
       name: entry.name,
     },
   };
 }
 
+/**
+ * Transform a private account, listing as many properties as possible.
+ */
 export function transformPrivateAccount(entry: AccountItem): PrivateAccountJsonApiResource {
-  const id = encodeAccountId(entry.tenantId, entry.id);
+  const id = encodeAccountId(entry.id);
   return {
     type: 'accounts',
     id,
     attributes: {
       name: entry.name,
-      email: entry.email,
-      phone: entry.phone,
+      email: entry.email ?? undefined,
+      phone: entry.phone ?? undefined,
       visibility: entry.visibility,
     },
     relationships: {
@@ -84,7 +93,7 @@ export function transformPrivateAccount(entry: AccountItem): PrivateAccountJsonA
       transactions: `/transactions/?filter[account]=${id}`,
     },
     meta: {
-      externalId: entry.externalId,
+      externalId: entry.externalId ?? undefined,
       balanceTotal: entry.balanceTotal,
       createdAt: entry.createdAt.toISOString(),
       updatedAt: entry.updatedAt.toISOString(),

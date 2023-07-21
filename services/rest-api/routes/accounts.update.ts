@@ -27,10 +27,10 @@ export default async function updateAccountRoute(ctx: KoaContext<JsonApiRoot>) {
 
     const { data } = validate(ctx.request.body, yup.object().required().shape({
       data: yup.object().required().shape({
-        type: yup.string().required().oneOf(['accounts']),
+        type: yup.string().required().oneOf([ 'accounts' ]),
         attributes: yup.object().required().shape({
           name: yup.string().nonNullable(),
-          visibility: yup.string<'PRIVATE' | 'UNLISTED' | 'PUBLIC'>().nonNullable().oneOf(['PRIVATE', 'UNLISTED', 'PUBLIC']),
+          visibility: yup.string<'PRIVATE' | 'UNLISTED' | 'PUBLIC'>().nonNullable().oneOf([ 'PRIVATE', 'UNLISTED', 'PUBLIC' ]),
         }),
         meta: yup.object({
           externalId: yup.string().nonNullable(),

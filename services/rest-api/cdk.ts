@@ -48,8 +48,15 @@ export function createTestbankApi(stack: cdk.Stack, role: cdk.aws_iam.Role) {
     sourceArn: `arn:aws:execute-api:${stack.region}:${stack.account}:${apiGateway.ref}/*/$default`,
   });
 
+  const apiDomainName = new cdk.aws_apigatewayv2.CfnApiMapping(stack, 'api-domain-name', {
+    apiId: apiGateway.ref,
+    domainName: 'api.testbank.dev',
+    stage: '$default',
+  });
+
   return {
     apiFunction,
     apiGateway,
+    apiDomainName,
   };
 }

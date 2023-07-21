@@ -3,6 +3,9 @@ import type { ParameterizedContext as NearlyKoaContext } from 'koa';
 
 const { AWS_LAMBDA_FUNCTION_NAME, LOG_LEVEL, LOG_NAME, NODE_ENV } = process.env;
 
+/**
+ * Returns `true` if the value is an object & is not empty
+ */
 function notEmptyObject(obj: any): boolean {
   return Object.prototype.toString.call(obj) === '[object Object]' && Object.keys(obj).length > 0;
 }
@@ -54,8 +57,8 @@ const serializers = {
     if (err instanceof Error) {
       const output = bunyan.stdSerializers.err(err);
 
-      for (const key in err) {
-        if (err.hasOwnProperty(key) && key !== 'message' && key !== 'stack') {
+      for (const key in err) { // eslint-disable-line no-restricted-syntax
+        if (Object.prototype.hasOwnProperty.call(err, key) && key !== 'message' && key !== 'stack') {
           output[key] = (err as Record<string, any>)[key];
         }
       }

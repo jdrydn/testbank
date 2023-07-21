@@ -1,14 +1,15 @@
 import assert from 'assert';
+import { wait } from '@someimportantcompany/utils';
 
 Object.assign(process.env, {
   NODE_ENV: 'testing',
   LOG_LEVEL: process.env.LOG_LEVEL ?? 'fatal',
 });
 
-before(() => {
+before(async () => {
   assert(process.env.MYSQL_URI, 'Expected MYSQL_URI env to be set');
-  console.log('Seeding database: %s', process.env.MYSQL_URI);
-  return new Promise<void>(resolve => setTimeout(() => resolve(), 1900));
+  console.log('Seeding database: %s', process.env.MYSQL_URI); // eslint-disable-line no-console
+  await wait(1900);
 });
 
 before(async () => {

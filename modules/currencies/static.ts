@@ -11,17 +11,17 @@ export interface CurrencyResource extends JsonApiResource {
 }
 
 export const currencies: Record<string, CurrencyResource['attributes']> = {
-  'USD': {
+  USD: {
     name: 'United States Dollar',
     symbol: '$',
     icon: '🇺🇸',
   },
-  'GBP': {
+  GBP: {
     name: 'Great British Pound',
     symbol: '£',
     icon: '🇬🇧',
   },
-  'EUR': {
+  EUR: {
     name: 'Euro',
     symbol: '€',
     icon: '🇪🇺',

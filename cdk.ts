@@ -20,8 +20,8 @@ import { createTestbankApi } from './services/rest-api/cdk';
 
   lambdaRole.addToPolicy(new cdk.aws_iam.PolicyStatement({
     effect: cdk.aws_iam.Effect.ALLOW,
-    actions: ['logs:PutRetentionPolicy', 'logs:DeleteRetentionPolicy'],
-    resources: ['*'],
+    actions: [ 'logs:PutRetentionPolicy', 'logs:DeleteRetentionPolicy' ],
+    resources: [ '*' ],
   }));
 
   createTestbankApi(stack, lambdaRole);

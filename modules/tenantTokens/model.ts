@@ -32,13 +32,15 @@ export async function findTenantTokens(tenantId: number): Promise<TenantTokenIte
   return rows;
 }
 
-export async function createTenantToken(tenantId: number, create: TenantToken, session?: MysqlSession): Promise<number> {
-  const insertQuery = sql.insert().into('TenantToken').setFields([{ tenantId, ...create }]);
+export async function createTenantToken(tenantId: number, create: TenantToken, session?: MysqlSession):
+Promise<number> {
+  const insertQuery = sql.insert().into('TenantToken').setFields([ { tenantId, ...create } ]);
   const { insertId } = await mysqlQuery(insertQuery, session);
   return insertId;
 }
 
-export async function updateTenantTokenById(id: number, update: Partial<TenantToken>, session?: MysqlSession): Promise<boolean> {
+export async function updateTenantTokenById(id: number, update: Partial<TenantToken>, session?: MysqlSession):
+Promise<boolean> {
   const updateQuery = sql.update().table('TenantToken').setFields(update).where('id = ?', id);
   const { affectedRows } = await mysqlQuery(updateQuery, session);
   return affectedRows === 1;

@@ -8,25 +8,33 @@ import { validate, yup } from '@/lib/validate';
 
 import { KoaContext, setRes } from '../context';
 
-export default async function createAccountRoute(ctx: KoaContext<JsonApiRoot>) {
+/**
+ * POST /accounts
+ * Create an account, with an initial balance.
+ */
+export default async function createAccountRoute(ctx: KoaContext<JsonApiRoot>): Promise<void> {
   const { tenantId } = ctx.state;
   assert(tenantId, 401, 'Not authenticated');
 
   const { data } = validate(ctx.request.body, yup.object().required().shape({
     data: yup.object().required().shape({
-      type: yup.string().required().oneOf(['accounts']),
+      type: yup.string().required().oneOf([ 'accounts' ]),
       attributes: yup.object().required().shape({
         name: yup.string().required(),
-        visibility: yup.string<'PRIVATE' | 'UNLISTED' | 'PUBLIC'>().default('PRIVATE').oneOf(['PRIVATE', 'UNLISTED', 'PUBLIC']),
+        email: yup.string(),
+        phone: yup.string(),
+        visibility: yup.string<'PRIVATE' | 'UNLISTED' | 'PUBLIC'>()
+          .default('PRIVATE')
+          .oneOf([ 'PRIVATE', 'UNLISTED', 'PUBLIC' ]),
       }),
       relationships: yup.object().required().shape({
         currency: yup.object().required().shape({
           data: yup.object().required().shape({
-            type: yup.string().required().oneOf(['currencies']),
+            type: yup.string().required().oneOf([ 'currencies' ]),
             id: yup.string().required(),
           }),
         }),
-        // initialBalance: yup.object().default(undefined).shape({
+        // initialBalance: yup.object().optional().shape({
         //   data: yup.object().required().shape({
         //     type: yup.string().required().oneOf(['transactions']),
         //     attributes: yup.object().required().shape({
@@ -51,7 +59,8 @@ export default async function createAccountRoute(ctx: KoaContext<JsonApiRoot>) {
       externalId: data.meta.externalId,
     }, { session });
 
-    return accountId ? await getAccountById(tenantId, accountId, { session }) : undefined;
+    const item = accountId ? await getAccountById(tenantId, accountId, { session }) : undefined;
+    return item;
   });
   assert(accountItem?.id, 500, 'Failed to create account');
 

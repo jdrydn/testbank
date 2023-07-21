@@ -1,8 +1,11 @@
+/* eslint-disable max-classes-per-file */
 import assert from 'assert';
 import ms from 'ms';
 import mysql from 'mysql2/promise';
 import squel from 'squel';
 import { format as formatDate } from 'date-fns';
+
+import logger from './logger';
 
 const client = mysql.createPool({
   uri: process.env.MYSQL_URI ?? 'mysql://127.0.0.1:3306/test',
@@ -10,6 +13,7 @@ const client = mysql.createPool({
   connectTimeout: ms(process.env.MYSQL_CONNECTION_TIMEOUT ?? '2s'),
   timezone: '+00:00', // Etc/UTC
   typeCast(field, next) {
+    /* eslint-disable no-confusing-arrow */
     if ((field.type === 'TINY' && field.length === 1) || field.type === 'BOOLEAN') {
       // If this is a MySQL pseudo-boolean, parse it thusly
       return (value => value === null ? null : value === '1')(field.string());
@@ -32,21 +36,21 @@ export const sql = (() => {
      */
     selectFoundRows: {
       enumerable: true,
-      value: function selectFoundRows() {
-        return sql.select(null, [
-          new squel.cls.StringBlock(null, 'SELECT SQL_CALC_FOUND_ROWS'),
-          new squel.cls.FunctionBlock(undefined),
-          new squel.cls.DistinctBlock(undefined),
-          new squel.cls.GetFieldBlock(undefined),
-          new squel.cls.FromTableBlock(undefined),
-          new squel.cls.JoinBlock(undefined),
-          new squel.cls.WhereBlock(undefined),
-          new squel.cls.GroupByBlock(undefined),
-          new squel.cls.HavingBlock(undefined),
-          new squel.cls.OrderByBlock(undefined),
-          new squel.cls.LimitBlock(undefined),
-          new squel.cls.OffsetBlock(undefined),
-          new squel.cls.UnionBlock(undefined),
+      value: function selectFoundRows(options?: Partial<squel.CompleteQueryBuilderOptions> | undefined) {
+        return sql.select(options ?? null, [
+          new squel.cls.StringBlock(options ?? null, 'SELECT SQL_CALC_FOUND_ROWS'),
+          new squel.cls.FunctionBlock(options),
+          new squel.cls.DistinctBlock(options),
+          new squel.cls.GetFieldBlock(options),
+          new squel.cls.FromTableBlock(options),
+          new squel.cls.JoinBlock(options),
+          new squel.cls.WhereBlock(options),
+          new squel.cls.GroupByBlock(options),
+          new squel.cls.HavingBlock(options),
+          new squel.cls.OrderByBlock(options),
+          new squel.cls.LimitBlock(options),
+          new squel.cls.OffsetBlock(options),
+          new squel.cls.UnionBlock(options),
         ]);
       },
     },
@@ -63,9 +67,13 @@ export const sql = (() => {
 
 export type MysqlSession = mysql.PoolConnection;
 
+/**
+ * Open a dedicated connection to the database.
+ * Reduces DB interaction time when we have multiple database queries to perform.
+ */
 export async function getMysqlConnection<T = any>(
   conn: MysqlSession | undefined,
-  fn: (session: MysqlSession) => Promise<T>,
+  fn: (session: MysqlSession) => Promise<T>, // eslint-disable-line no-unused-vars
 ): Promise<T> {
   if (conn) {
     return fn(conn);
@@ -83,6 +91,7 @@ export async function getMysqlConnection<T = any>(
   }
 }
 
+/* eslint-disable no-redeclare, no-unused-vars, no-use-before-define */
 export async function mysqlQuery<T = Record<string, any>>(
   query: squel.Select, conn?: MysqlSession,
 ): Promise<MysqlReadResult<T>>;
@@ -98,6 +107,9 @@ export async function mysqlQuery(
 export async function mysqlQuery<R = unknown, W = number>(
   query: squel.QueryBuilder | string | [string, any[]],
 ): Promise<MysqlReadResult<R> | MysqlWriteResult<W>>;
+/**
+ * Execute a query against the database.
+ */
 export async function mysqlQuery<R = Record<string, any>, W = never>(
   query: squel.QueryBuilder | string | [string, any[]], conn?: MysqlSession | undefined,
 ): Promise<MysqlReadResult<R> | MysqlWriteResult<W>> {
@@ -105,7 +117,7 @@ export async function mysqlQuery<R = Record<string, any>, W = never>(
   let values: any[] = [];
 
   if (Array.isArray(query) && query.length === 2) {
-    ([text, values] = query);
+    ([ text, values ] = query);
   } else if (typeof query === 'string') {
     text = query;
   } else {
@@ -113,8 +125,6 @@ export async function mysqlQuery<R = Record<string, any>, W = never>(
       new TypeError(`Expected query to be a Statement | string | [string, any[]] but found: ${typeof query}`));
     ({ text, values } = query.toParam());
   }
-
-  // console.log({ text, values });
 
   try {
     if (text.trim().toUpperCase().startsWith('SELECT SQL_CALC_FOUND_ROWS')) {
@@ -137,9 +147,14 @@ export async function mysqlQuery<R = Record<string, any>, W = never>(
     throw err;
   }
 }
+/* eslint-enable no-redeclare, no-unused-vars, no-use-before-define */
 
+/**
+ * Start a connection with a DB transaction, which commits on function end.
+ * Since there's no way to work out if a connection
+ */
 export function getMysqlTransaction<T>(
-  fn: (conn: MysqlSession) => T | Promise<T>,
+  fn: (conn: MysqlSession) => T | Promise<T>, // eslint-disable-line no-unused-vars
 ): Promise<T> {
   return getMysqlConnection(undefined, async conn => {
     try {
@@ -149,8 +164,12 @@ export function getMysqlTransaction<T>(
       await conn.commit();
       return result;
     } catch (err) {
-      try { await conn.rollback(); }
-      catch (rollback_err) { /* Log rollback_err somewhere? */ }
+      try {
+        await conn.rollback();
+      } catch (rerr) {
+        /* Log rollback_err somewhere? */
+        logger.fatal({ err, rollbackErr: rerr }, 'Error rolling back MySQL transaction');
+      }
       throw err;
     } finally {
       // logger.debug('getMysqlTransaction finished');
@@ -159,7 +178,6 @@ export function getMysqlTransaction<T>(
 }
 
 class MysqlReadResult<T = Record<string, any>> {
-
   public rows: T[];
   public fields: string[];
   public foundRows: number | undefined;
@@ -170,21 +188,24 @@ class MysqlReadResult<T = Record<string, any>> {
     this.foundRows = foundRows;
   }
 
-  find(fn: (value: T, index: number, rows: T[]) => boolean): T | undefined {
+  find(fn: (value: T, index: number, rows: T[]) => boolean): T | undefined { // eslint-disable-line no-unused-vars
     return (Array.isArray(this.rows) ? this.rows : []).find(fn);
   }
-  filter(fn: (value: T, index: number, rows: T[]) => boolean) {
+  filter(fn: (value: T, index: number, rows: T[]) => boolean) { // eslint-disable-line no-unused-vars
     return (Array.isArray(this.rows) ? this.rows : []).filter(fn);
   }
-  forEach(fn: (value: T, index: number, rows: T[]) => void) {
+  forEach(fn: (value: T, index: number, rows: T[]) => void) { // eslint-disable-line no-unused-vars
     return (Array.isArray(this.rows) ? this.rows : []).forEach(fn);
   }
-  map<U = any>(fn: (value: T, index: number, rows: T[]) => U) {
+  map<U = any>(fn: (value: T, index: number, rows: T[]) => U) { // eslint-disable-line no-unused-vars
     return (Array.isArray(this.rows) ? this.rows : []).map(fn);
   }
 
+  // eslint-disable-next-line no-unused-vars
   reduce(fn: (acc: T, value: T, index: number, rows: T[]) => T): T;
+  // eslint-disable-next-line no-redeclare, no-unused-vars, no-dupe-class-members
   reduce<U>(fn: (acc: U, value: T, index: number, rows: T[]) => U, start: U): U;
+  // eslint-disable-next-line no-redeclare, no-unused-vars, no-dupe-class-members
   reduce<U>(fn: (acc: U, value: T, index: number, rows: T[]) => U, start?: any): U {
     return (Array.isArray(this.rows) ? this.rows : []).reduce(fn, start);
   }
@@ -195,7 +216,7 @@ class MysqlReadResult<T = Record<string, any>> {
 
   column<U = string>(): U[] {
     if (this.fields.length) {
-      const [field] = this.fields;
+      const [ field ] = this.fields;
       return this.rows.reduce((values, row) => {
         if (Object.prototype.hasOwnProperty.call(row, field)) {
           values.push(row[field as keyof typeof row] as U);
@@ -209,18 +230,16 @@ class MysqlReadResult<T = Record<string, any>> {
 
   single<U = string>() {
     if (this.rows.length && this.fields.length) {
-      const [row] = this.rows;
-      const [field] = this.fields;
+      const [ row ] = this.rows;
+      const [ field ] = this.fields;
       return Object.prototype.hasOwnProperty.call(row, field) ? row[field as keyof typeof row] as U : undefined;
     } else {
       return undefined;
     }
   }
-
 }
 
 class MysqlWriteResult<T = never> {
-
   public affectedRows: number;
   public changedRows: number;
   public insertId: T;
@@ -230,5 +249,4 @@ class MysqlWriteResult<T = never> {
     this.changedRows = changedRows;
     this.insertId = insertId;
   }
-
 }

@@ -5,9 +5,11 @@ import path from 'path';
 
 const statements: [string, string][] = fs.readdirSync(__dirname)
   .filter(filename => path.extname(filename) === '.sql')
-  .map(filename => [filename, fs.readFileSync(path.resolve(__dirname, filename), 'utf8')]);
+  .map(filename => [ filename, fs.readFileSync(path.resolve(__dirname, filename), 'utf8') ]);
 
-export async function seedData(log: (action: string, message: string) => void = () => {}) {
+export async function seedData(
+  log: (action: string, message: string) => void = () => {}, // eslint-disable-line no-unused-vars
+): Promise<void> {
   const conn = await mysql.createConnection({
     uri: process.env.MYSQL_URI ?? 'mysql://127.0.0.1:3306/test',
     connectionLimit: parseInt(process.env.MYSQL_CONNECTION_LIMIT ?? '', 10) || 1,
@@ -17,18 +19,19 @@ export async function seedData(log: (action: string, message: string) => void = 
   });
 
   try {
-    const [results] = await conn.query('SHOW TABLES');
+    /* eslint-disable no-restricted-syntax, no-await-in-loop */
+    const [ results ] = await conn.query('SHOW TABLES');
     const tables = (results as any[]).reduce((list, table) => list.concat(Object.values(table)), [] as string[]);
 
     await conn.beginTransaction();
     try {
       await conn.query('SET FOREIGN_KEY_CHECKS = 0');
       for (const table of tables) {
-        await conn.query('TRUNCATE ??', [table]);
+        await conn.query('TRUNCATE ??', [ table ]);
         log('🚫 Truncated', table);
       }
       for (const table of tables) {
-        await conn.query('DROP TABLE ??', [table]);
+        await conn.query('DROP TABLE ??', [ table ]);
         log('❌ Deleted', table);
       }
       await conn.query('SET FOREIGN_KEY_CHECKS = 1');
@@ -40,7 +43,7 @@ export async function seedData(log: (action: string, message: string) => void = 
 
     await conn.beginTransaction();
     try {
-      for (const [filename, fileContents] of statements) {
+      for (const [ filename, fileContents ] of statements) {
         await conn.query(fileContents);
         log('✅ Imported', filename);
       }
@@ -49,8 +52,6 @@ export async function seedData(log: (action: string, message: string) => void = 
       await conn.rollback().catch(err2 => log('ERROR', err2));
       throw err;
     }
-  } catch (err) {
-    throw err;
   } finally {
     await conn.end().catch(err2 => log('ERROR', err2));
   }
@@ -58,6 +59,7 @@ export async function seedData(log: (action: string, message: string) => void = 
 
 if (require.main === module) {
   (async () => {
+    /* eslint-disable no-console */
     try {
       await seedData(console.log);
       process.stdout.write('\n');

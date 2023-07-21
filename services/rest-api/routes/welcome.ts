@@ -27,4 +27,4 @@ export default function welcomeRoute(ctx: KoaContext<Pick<JsonApiRoot, 'meta' | 
       baseUrl: ctx.apiBaseurl,
     }),
   };
-};
+}

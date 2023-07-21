@@ -1,0 +1,91 @@
+{
+  "env": {
+    "node": true,
+    "commonjs": true,
+    "es2020": true
+  },
+  "extends": [
+    "airbnb-base",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    // "@typescript-eslint",
+    "import"
+  ],
+  "ignorePatterns": [
+    "cdk.out/",
+    "coverage/",
+    "node_modules/",
+    "*/node_modules/*"
+  ],
+  "rules": {
+    // "semi": ["error", "never"],
+    // "quotes": ["error", "double"],
+    "semi": "off",
+    "quotes": "off",
+    "no-underscore-dangle": "off",
+    "linebreak-style": 0,
+    "max-len": ["error", 120],
+    "arrow-parens": "off",
+    "object-curly-newline": "off",
+    "function-paren-newline": "off",
+    "function-call-argument-newline": "off",
+    "default-case": "off",
+    "no-return-assign": "off",
+    "object-property-newline": "off",
+    "import/no-extraneous-dependencies": "off",
+    "import/no-relative-packages": "off",
+    "import/prefer-default-export": "off",
+    "import/extensions": ["error", "ignorePackages", { "js": "never", "jsx": "never", "ts": "never", "tsx": "never" }],
+    "no-use-before-define": ["error", { "functions": false }],
+    "no-else-return": "off",
+    "lines-between-class-members": "off",
+    "array-bracket-spacing": ["error", "always"],
+    "require-jsdoc": ["error", {
+      "require": {
+        "FunctionDeclaration": true,
+        "MethodDefinition": false,
+        "ClassDeclaration": false,
+        "ArrowFunctionExpression": false,
+        "FunctionExpression": false
+      }
+    }]
+  },
+  "overrides": [
+    {
+      "files": ["cdk.ts", "**/cdk.ts"],
+      "rules": {
+        "require-jsdoc": "off"
+      }
+    },
+    {
+      "files": ["test/**", "**/*.test.ts"],
+      "env": { "mocha": true },
+      "plugins": ["mocha"],
+      "rules": {
+        "padded-blocks": "off",
+        "prefer-arrow-callback": "off",
+        "func-names": "off",
+        "no-param-reassign": "off",
+        "require-jsdoc": "off",
+        "mocha/no-exclusive-tests": "error",
+        "mocha/no-identical-title": "error"
+      }
+    }
+  ],
+  "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
+    "import/resolver": {
+      "node": {
+        "paths": ["."],
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      },
+      "typescript": {}
+    }
+  }
+}

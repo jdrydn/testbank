@@ -9,7 +9,7 @@ export async function authenticate(ctx: KoaContext, next?: NextFunction) {
   if (authHeader && authHeader.length) {
     const details = { code: 'NOT_AUTHENTICATED', userMessage: 'You must be authenticated' };
 
-    const [authType, authToken] = authHeader.split(' ');
+    const [ authType, authToken ] = authHeader.split(' ');
     assert.strictEqual(authType, 'Bearer', 401, 'Expected token to be a Bearer token', details);
     assert.ok(authToken.length === 32, 401, 'Expected token to be a 32-length string', details);
 

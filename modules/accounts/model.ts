@@ -1,6 +1,6 @@
 import { mysqlQuery, sql, MysqlSession } from '@/lib/mysql';
 
-import { decodeAccountId } from './controller';
+import { decodeAccountId } from '../hashes';
 
 export interface Account {
   name: string,
@@ -22,17 +22,16 @@ export interface AccountItem extends Account {
   deletedAt?: Date,
 }
 
+/**
+ * Fetch an account by ID, optionally decoding the account ID if it's a string.
+ */
 export async function getAccountById(tenantId: number, id: string | number, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<AccountItem | undefined> {
   const selectQuery = sql.select().from('Account').where('tenantId = ? AND id = ?', tenantId, id);
 
   if (typeof id === 'string') {
-    const [tId2, aId] = decodeAccountId(id);
-    if (tenantId !== tId2) {
-      // Return `undefined` early if the tenant ID is mismatch
-      return undefined;
-    }
+    const aId = decodeAccountId(id);
     selectQuery.where('tenantId = ? AND id = ?', tenantId, aId);
   } else {
     selectQuery.where('tenantId = ? AND id = ?', tenantId, id);
@@ -41,6 +40,9 @@ export async function getAccountById(tenantId: number, id: string | number, { se
   return (await mysqlQuery<AccountItem>(selectQuery, session)).first();
 }
 
+/**
+ * List accounts by a tenant ID.
+ */
 export async function findAccounts(tenantId: number, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<AccountItem[]> {
@@ -49,6 +51,9 @@ export async function findAccounts(tenantId: number, { session }: {
   return rows;
 }
 
+/**
+ * List specific accounts by account ID. Decoding IDs with this function is not supported.
+ */
 export async function findAccountsById(ids: number[], { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<AccountItem[]> {
@@ -57,6 +62,9 @@ export async function findAccountsById(ids: number[], { session }: {
   return rows;
 }
 
+/**
+ * Create an account.
+ */
 export async function createAccount(tenantId: number, create: Account, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<number> {
@@ -65,6 +73,9 @@ export async function createAccount(tenantId: number, create: Account, { session
   return insertId;
 }
 
+/**
+ * Update an account by ID.
+ */
 export async function updateAccountById(tenantId: number, id: number, update: Partial<Account>, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<boolean> {
@@ -73,6 +84,9 @@ export async function updateAccountById(tenantId: number, id: number, update: Pa
   return affectedRows === 1;
 }
 
+/**
+ * Delete an account by ID.
+ */
 export async function deleteAccountById(tenantId: number, id: number, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<boolean> {

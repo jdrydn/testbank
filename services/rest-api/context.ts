@@ -1,7 +1,5 @@
-import _isPlainObject from 'lodash/isPlainObject';
-import assert from 'http-assert-plus';
 import ms from 'ms';
-import { attempt, createHashMd5 } from '@someimportantcompany/utils';
+import { createHashMd5 } from '@someimportantcompany/utils';
 import { randomUUID } from 'crypto';
 import type Koa from 'koa';
 import type { APIGatewayProxyEventV2, Context } from 'aws-lambda';
@@ -30,7 +28,6 @@ export interface KoaRequest extends Koa.Request {
     lambdaEvent?: APIGatewayProxyEventV2,
     lambdaContext?: Context,
   },
-  body?: Record<string, any> | Record<string, any>[] | undefined,
 }
 
 export interface KoaContext<Body = unknown> extends Koa.ParameterizedContext<AppState, AppContext, Body> {
@@ -78,28 +75,6 @@ export const AppContextProps: PropertyDescriptorMap & ThisType<KoaContext> = {
     get() {
       const { userAgent } = this.req.lambdaEvent?.requestContext.http ?? {};
       return userAgent ?? this.request.get('User-Agent');
-    },
-  },
-};
-
-export const AppRequestProps: PropertyDescriptorMap & ThisType<KoaRequest> = {
-  body: {
-    enumerable: true,
-    get() {
-      const type = this.get('Content-Type');
-      const { body, isBase64Encoded } = this.req.lambdaEvent ?? {};
-
-      const rawBody = body && typeof body === 'string' // eslint-disable-line no-nested-ternary
-        ? (isBase64Encoded ? Buffer.from(body, 'base64').toString('utf8') : body)
-        : null;
-
-      if (typeof type === 'string' && typeof rawBody === 'string' && type.startsWith('application/json')) {
-        const parsed = attempt(() => JSON.parse(rawBody));
-        assert(_isPlainObject(parsed) || Array.isArray(parsed), 400, 'Expected req body to be an array or object');
-        return parsed;
-      }
-
-      return undefined;
     },
   },
 };
@@ -177,9 +152,6 @@ export const serverlessHttpOpts: ServerlessHttpOptions = {
       pathParameters: undefined,
     };
     req.lambdaContext = context;
-
-    const { any } = event.pathParameters || {};
-    req.url = typeof any === 'string' ? `/${any || ''}` : req.url;
 
     logger.debug({ req_id: context.awsRequestId, event, context });
   },
