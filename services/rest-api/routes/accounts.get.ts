@@ -3,9 +3,14 @@ import type { JsonApiRoot } from 'jsonapi-resolvers';
 
 import { getAccountById } from '@/modules/accounts/model';
 import { transformPrivateAccount } from '@/modules/accounts/resolver';
+import { decodeAccountId } from '@/modules/hashes';
 
 import { KoaContext, setRes } from '../context';
 
+/**
+ * GET /accounts
+ * Get an account by ID.
+ */
 export default async function getAccountRoute(ctx: KoaContext<JsonApiRoot>) {
   const { tenantId } = ctx.state;
   assert(tenantId, 401, 'Not authenticated');
@@ -14,17 +19,17 @@ export default async function getAccountRoute(ctx: KoaContext<JsonApiRoot>) {
     title: 'Account not found',
     userMessage: 'This account by ID was not found.',
     code: 'ACCOUNT_NOT_FOUND',
+    tenantId,
   };
 
   const { accountId: encodedAccountId } = ctx.params ?? {};
   assert(encodedAccountId, 404, 'Missing parameter { accountId }', errDetails);
 
-  const accountItem = await getAccountById(tenantId, encodedAccountId);
+  const accountId = decodeAccountId(encodedAccountId);
+
+  const accountItem = await getAccountById(tenantId, accountId);
   assert(accountItem?.id, 404, 'Account not found by ID', {
-    title: 'Account not found',
-    userMessage: 'This account by ID was not found.',
-    code: 'ACCOUNT_NOT_FOUND',
-    tenantId,
+    ...errDetails,
     accountId: encodedAccountId,
   });
 

@@ -1,7 +1,5 @@
 import { mysqlQuery, sql, MysqlSession } from '@/lib/mysql';
 
-import { decodeAccountId } from '../hashes';
-
 export interface Account {
   name: string,
   externalId?: string | undefined,
@@ -25,18 +23,10 @@ export interface AccountItem extends Account {
 /**
  * Fetch an account by ID, optionally decoding the account ID if it's a string.
  */
-export async function getAccountById(tenantId: number, id: string | number, { session }: {
+export async function getAccountById(tenantId: number, id: number, { session }: {
   session?: MysqlSession | undefined,
 } = {}): Promise<AccountItem | undefined> {
   const selectQuery = sql.select().from('Account').where('tenantId = ? AND id = ?', tenantId, id);
-
-  if (typeof id === 'string') {
-    const aId = decodeAccountId(id);
-    selectQuery.where('tenantId = ? AND id = ?', tenantId, aId);
-  } else {
-    selectQuery.where('tenantId = ? AND id = ?', tenantId, id);
-  }
-
   return (await mysqlQuery<AccountItem>(selectQuery, session)).first();
 }
 
