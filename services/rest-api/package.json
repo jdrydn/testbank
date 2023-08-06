@@ -3,8 +3,7 @@
   "version": "2023.7.1",
   "scripts": {
     "dev": "nodemon --exec 'ts-node --esm -r tsconfig-paths/register ../../node_modules/.bin/aws-lambda-rie-http' --watch './*' -e 'ts' api.handler | bunyan -o short",
-    "test": "nyc mocha",
-    "test:mocha": "mocha",
+    "test": "mocha",
     "test:debug": "LOG_LEVEL=debug mocha"
   },
   "repository": "https://github.com/testbankhq/testbank",

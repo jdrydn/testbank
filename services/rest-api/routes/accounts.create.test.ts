@@ -9,7 +9,7 @@ import { getNextInsertId } from '@/test/database';
 
 import request from '../test/request';
 
-describe('services/rest-api/routes/accounts.create', () => {
+describe('services/rest-api', () => describe('routes/accounts.create', () => {
   const name = crypto.randomBytes(8).toString('hex');
 
   afterEach(async () => {
@@ -63,4 +63,4 @@ describe('services/rest-api/routes/accounts.create', () => {
       });
   });
 
-});
+}));

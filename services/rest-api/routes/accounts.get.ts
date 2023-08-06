@@ -8,7 +8,7 @@ import { decodeAccountId } from '@/modules/hashes';
 import { KoaContext, setRes } from '../context';
 
 /**
- * GET /accounts
+ * GET /accounts/:accountId
  * Get an account by ID.
  */
 export default async function getAccountRoute(ctx: KoaContext<JsonApiRoot>) {
@@ -30,7 +30,7 @@ export default async function getAccountRoute(ctx: KoaContext<JsonApiRoot>) {
   const accountItem = await getAccountById(tenantId, accountId);
   assert(accountItem?.id, 404, 'Account not found by ID', {
     ...errDetails,
-    accountId: encodedAccountId,
+    accountId,
   });
 
   setRes(ctx, {

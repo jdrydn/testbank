@@ -1,4 +1,5 @@
 import { mysqlQuery, sql, MysqlSession } from '@/lib/mysql';
+import { sortEntriesByIds } from '@/lib/utils';
 
 export interface Account {
   name: string,
@@ -49,7 +50,7 @@ export async function findAccountsById(ids: number[], { session }: {
 } = {}): Promise<AccountItem[]> {
   const selectQuery = sql.select().from('Account').where('id IN ?', ids);
   const { rows } = await mysqlQuery<AccountItem>(selectQuery, session);
-  return rows;
+  return sortEntriesByIds(rows, ids, 'id');
 }
 
 /**

@@ -22,4 +22,4 @@ CREATE TABLE IF NOT EXISTS `Account` (
   FOREIGN KEY `tenantId` (`tenantId`) REFERENCES `Tenant` (`id`) ON UPDATE CASCADE ON DELETE RESTRICT,
   UNIQUE KEY `tenantId-externalId` (`tenantId`, `externalId`),
   KEY `createdAt` (`createdAt`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci AUTO_INCREMENT=100;

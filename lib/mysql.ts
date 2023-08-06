@@ -36,9 +36,9 @@ export const sql = (() => {
      */
     selectFoundRows: {
       enumerable: true,
-      value: function selectFoundRows(options?: Partial<squel.CompleteQueryBuilderOptions> | undefined) {
-        return sql.select(options ?? null, [
-          new squel.cls.StringBlock(options ?? null, 'SELECT SQL_CALC_FOUND_ROWS'),
+      value: function selectFoundRows(options: any) {
+        return sql.select(options, [
+          new squel.cls.StringBlock(options, 'SELECT SQL_CALC_FOUND_ROWS'),
           new squel.cls.FunctionBlock(options),
           new squel.cls.DistinctBlock(options),
           new squel.cls.GetFieldBlock(options),
@@ -129,9 +129,9 @@ export async function mysqlQuery<R = Record<string, any>, W = never>(
   try {
     if (text.trim().toUpperCase().startsWith('SELECT SQL_CALC_FOUND_ROWS')) {
       return getMysqlConnection(conn, async c => {
-        const [ rows, fields ] = await (conn ?? client).query(text, values);
+        const [ rows, fields ] = await (c).query(text, values);
         const foundQuery = 'SELECT FOUND_ROWS() AS foundRows';
-        const [ [ { foundRows } ] ] = (await (conn ?? client).query(foundQuery)) as unknown as [[{foundRows: number}]];
+        const [ [ { foundRows } ] ] = (await (c).query(foundQuery)) as unknown as [[{foundRows: number}]];
         return new MysqlReadResult(rows as R[], fields, foundRows);
       });
     } else if (text.trim().toUpperCase().startsWith('SELECT ')) {

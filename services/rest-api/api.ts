@@ -20,9 +20,13 @@ app.use(bodyParser({ encoding: 'utf8', enableTypes: [ 'json' ], jsonStrict: true
 router.get('/', routes.welcome);
 router.get('/currencies', routes.listCurrencies);
 
-router.get('/accounts', requireAuth, routes.listAccounts);
-router.post('/accounts', requireAuth, routes.createAccount);
-router.get('/accounts/:accountId', requireAuth, routes.getAccount);
+router.use(requireAuth);
+
+router.get('/accounts', routes.listAccounts);
+router.post('/accounts', routes.createAccount);
+router.get('/accounts/:accountId', routes.getAccount);
+router.patch('/accounts/:accountId', routes.updateAccount);
+router.delete('/accounts/:accountId', routes.deleteAccount);
 
 app.use(router.routes()).use(router.allowedMethods());
 
