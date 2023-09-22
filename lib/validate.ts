@@ -2,6 +2,9 @@ import * as yup from 'yup';
 
 export { yup };
 
+export type CreateSchema<T extends yup.AnyObject> = yup.ObjectSchema<T>;
+export type UpdateSchema<T extends yup.AnyObject> = yup.ObjectSchema<{ [P in keyof T]?: T[P] | undefined; }>;
+
 /**
  * Validate an object with a Yup object schema, enforcing:
  * - `abortEarly: false` to return one error with all validation problems.

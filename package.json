@@ -21,6 +21,8 @@
     "./services/*"
   ],
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.410.0",
+    "@aws-sdk/lib-dynamodb": "^3.410.0",
     "@koa/bodyparser": "^5.0.0",
     "@koa/router": "^12.0.0",
     "@someimportantcompany/utils": "^1.2.0",

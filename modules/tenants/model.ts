@@ -1,16 +1,25 @@
 import { mysqlQuery, sql, MysqlSession } from '@/lib/mysql';
+import { yup, CreateSchema, UpdateSchema } from '@/lib/validate';
 
 export interface Tenant {
   name: string,
   email: string,
 }
-
 export interface TenantItem extends Tenant {
   id: number,
   createdAt: Date,
   updatedAt: Date,
   deletedAt?: Date,
 }
+
+const createSchema: CreateSchema<Tenant> = yup.object({
+  name: yup.string().required(),
+  email: yup.string().required(),
+});
+const updateSchema: UpdateSchema<Tenant> = yup.object({
+  name: yup.string().optional().nonNullable(),
+  email: yup.string().optional().nonNullable(),
+});
 
 /**
  * Get tenant by ID
