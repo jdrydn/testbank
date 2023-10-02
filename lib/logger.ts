@@ -53,8 +53,10 @@ const serializers = {
       return ctx;
     }
   },
-  err(err: any) {
-    if (err instanceof Error) {
+  err(err: any[] | any): any[] | any {
+    if (Array.isArray(err)) {
+      return err.map(e => serializers.err(e));
+    } else if (err instanceof Error) {
       const output = bunyan.stdSerializers.err(err);
 
       for (const key in err) { // eslint-disable-line no-restricted-syntax

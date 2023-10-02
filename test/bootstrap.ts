@@ -1,20 +1,37 @@
+/* eslint-disable no-console */
 import assert from 'assert';
-import { wait } from '@someimportantcompany/utils';
+
+import { createMongoClient } from '@/lib/mongodb';
+
+import { startMongoDb, stopMongoDb, getMongoDbUri } from './mongodb';
+import { importData } from './seed.import';
 
 Object.assign(process.env, {
   NODE_ENV: 'testing',
   LOG_LEVEL: process.env.LOG_LEVEL ?? 'fatal',
 });
 
-before(async () => {
-  assert(process.env.MYSQL_URI, 'Expected MYSQL_URI env to be set');
-  console.log('Seeding database: %s', process.env.MYSQL_URI); // eslint-disable-line no-console
-  await wait(1900);
+before(async function setup() {
+  if (!process.env.MONGO_URI) {
+    this.timeout(5000);
+    await startMongoDb();
+  }
+
+  console.log('MongoDB: %s\n', process.env.MONGO_URI);
+
+  const mongodb = createMongoClient();
+  await importData(mongodb);
+
+  const db = mongodb.db();
+  const [ tenantsCount ] = await Promise.all([
+    db.collection('tenants').countDocuments(),
+  ]);
+
+  assert.ok(tenantsCount > 0, 'Expected Tenants collection to have entries');
 });
 
-before(async () => {
-  assert(process.env.MYSQL_URI, 'Expected MYSQL_URI env to be set');
-  const { seedData } = await import('./database/import');
-  await seedData();
-  process.stdout.write('\n\n');
+after(async () => {
+  if (getMongoDbUri()) {
+    await stopMongoDb();
+  }
 });

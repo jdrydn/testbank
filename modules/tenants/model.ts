@@ -1,67 +1,114 @@
-import { mysqlQuery, sql, MysqlSession } from '@/lib/mysql';
+import { createMongoClient, createObjectId, mongoSession } from '@/lib/mongodb';
+import type { WithId } from 'mongodb';
 
 export interface Tenant {
   name: string,
   email: string,
 }
 
-export interface TenantItem extends Tenant {
-  id: number,
+export interface TenantDocument extends Tenant {
+  _id: string,
   createdAt: Date,
   updatedAt: Date,
   deletedAt?: Date,
 }
 
 /**
+ * Shorthand to create the Tenant collection reference.
+ */
+function getTenantCollection() {
+  return createMongoClient().db().collection<Omit<TenantDocument, '_id'>>('tenants');
+}
+
+/**
+ * Format the entry on read
+ */
+function formatReadEntry(entry: WithId<Omit<TenantDocument, '_id'>>): TenantDocument {
+  return {
+    ...entry,
+    _id: entry._id.toString(),
+  };
+}
+
+/**
  * Get tenant by ID
  */
-export async function getTenantById(tenantId: number, { session }: {
-  session?: MysqlSession | undefined,
-} = {}): Promise<TenantItem | undefined> {
-  const selectQuery = sql.select().from('Tenant').where('id = ?', tenantId);
-  return (await mysqlQuery<TenantItem>(selectQuery, session)).first();
+export async function getTenantById(tenantId: string, { session }: {
+  session?: mongoSession | undefined,
+} = {}): Promise<TenantDocument | undefined> {
+  const entry = await getTenantCollection().findOne({
+    _id: createObjectId(tenantId),
+  }, {
+    comment: 'tenants.getTenantById',
+    ...(session ? { session } : undefined),
+  });
+  return entry?._id ? formatReadEntry(entry) : undefined;
 }
 
 /**
  * Find tenants by specific ID
  */
-export async function findTenantsById(tenantIds: number[], { session }: {
-  session?: MysqlSession | undefined,
-} = {}): Promise<TenantItem[]> {
-  const selectQuery = sql.select().from('Tenant').where('id IN ?', tenantIds);
-  const { rows } = await mysqlQuery<TenantItem>(selectQuery, session);
-  return rows;
+export async function findTenantsById(tenantIds: string[], { session }: {
+  session?: mongoSession | undefined,
+} = {}): Promise<TenantDocument[]> {
+  const cursor = getTenantCollection().find({
+    $or: tenantIds.map(id => ({ _id: createObjectId(id) })),
+  }, {
+    comment: 'tenants.findTenantsById',
+    ...(session ? { session } : undefined),
+  });
+  return (await cursor.toArray()).map(entry => formatReadEntry(entry));
 }
 
 /**
  * Create a tenant
  */
 export async function createTenant(create: Tenant, { session }: {
-  session?: MysqlSession | undefined,
-} = {}): Promise<number> {
-  const insertQuery = sql.insert().into('Tenant').setFields(create);
-  const { insertId } = await mysqlQuery(insertQuery, session);
-  return insertId;
+  session?: mongoSession | undefined,
+} = {}): Promise<string> {
+  const result = await getTenantCollection().insertOne({
+    ...create,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }, {
+    comment: 'tenants.createTenant',
+    ...(session ? { session } : undefined),
+  });
+
+  return result.insertedId.toString();
 }
 
 /**
  * Update tenant by ID
  */
-export async function updateTenantById(tenantId: number, update: Partial<Tenant>, { session }: {
-  session?: MysqlSession | undefined,
+export async function updateTenantById(tenantId: string, update: Partial<Tenant>, { session }: {
+  session?: mongoSession | undefined,
 } = {}): Promise<boolean> {
-  const updateQuery = sql.update().table('Tenant').setFields(update).where('id = ?', tenantId);
-  const { affectedRows } = await mysqlQuery(updateQuery, session);
-  return affectedRows === 1;
+  const result = await getTenantCollection().updateOne({
+    _id: createObjectId(tenantId),
+  }, {
+    ...update,
+    updatedAt: new Date(),
+  }, {
+    comment: 'tenants.updateTenantById',
+    ...(session ? { session } : undefined),
+  });
+
+  return result.matchedCount === 1;
 }
 
 /**
  * Delete tenant by ID
  */
-export async function deleteTenantById(tenantId: number, { session }: {
-  session?: MysqlSession | undefined,
+export async function deleteTenantById(tenantId: string, { session }: {
+  session?: mongoSession | undefined,
 } = {}): Promise<boolean> {
-  const deleteQuery = sql.delete().from('Tenant').where('id = ?', tenantId);
-  const { affectedRows } = await mysqlQuery(deleteQuery, session);
-  return affectedRows === 1;
+  const result = await getTenantCollection().deleteOne({
+    _id: createObjectId(tenantId),
+  }, {
+    comment: 'tenants.deleteTenantById',
+    ...(session ? { session } : undefined),
+  });
+
+  return result.deletedCount === 1;
 }
